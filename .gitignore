@@ -1,0 +1,17 @@
+# frontend
+frontend/node_modules
+frontend/dist
+
+# backend
+backend/target
+backend/.gradle
+backend/build
+
+# env
+.env
+*.env
+
+# IDE
+.vscode
+.idea
+.DS_Store
