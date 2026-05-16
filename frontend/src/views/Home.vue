@@ -170,15 +170,15 @@ const goTo = (path) => {
 }
 
 .bg1 {
-    background: linear-gradient(to right, #409eff, #36cffc);
+    background: url('/images/banner/slideshow1.png') center / cover no-repeat;
 }
 
 .bg2 {
-    background: linear-gradient(to right, #67c23a, #95de64);
+    background: url('/images/banner/slideshow2.png') center / cover no-repeat;
 }
 
 .bg3 {
-    background: linear-gradient(to right, #f56c6c, #f78989);
+    background: url('/images/banner/slideshow3.png') center / cover no-repeat;
 }
 
 .carousel-item h1 {
