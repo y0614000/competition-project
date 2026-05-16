@@ -3,9 +3,17 @@
         <!-- 顶部头部 -->
         <el-header class="layout-header">
             <div class="title">自贸港人才服务系统</div>
+
+            <!-- 已登录：显示用户名 + 退出 -->
             <div class="user-info" v-if="userInfo">
                 <span>欢迎：{{ userInfo.username }}</span>
                 <el-button text type="danger" @click="logout">退出登录</el-button>
+            </div>
+
+            <!-- 未登录：显示 登录 + 注册 按钮 -->
+            <div class="login-box" v-else>
+                <el-button text class="white-btn" @click="goLogin">登录</el-button>
+                <el-button type="primary" class="reg-btn" @click="goRegister">注册</el-button>
             </div>
         </el-header>
 
@@ -115,6 +123,16 @@ const logout = () => {
     ElMessage.success('已退出登录')
     router.push('/login')
 }
+
+// 去登录
+const goLogin = () => {
+    router.push('/login')
+}
+
+// 去注册
+const goRegister = () => {
+    router.push('/register')
+}
 </script>
 
 <style scoped>
@@ -154,5 +172,27 @@ const logout = () => {
     background: #f5f7fa;
     padding: 20px;
     overflow-y: auto;
+}
+
+/* 未登录按钮样式 */
+.login-box {
+    display: flex;
+    gap: 10px;
+}
+
+.white-btn {
+    color: #fff !important;
+    border-color: #fff !important;
+}
+
+.white-btn:hover {
+    color: #f5f5f5 !important;
+    border-color: #f5f5f5 !important;
+}
+
+.reg-btn {
+    background: #fff !important;
+    color: #409eff !important;
+    border: none !important;
 }
 </style>
