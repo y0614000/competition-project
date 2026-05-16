@@ -1,4 +1,5 @@
 <?php
+
 namespace app\controller;
 
 use think\facade\Db;
@@ -7,12 +8,12 @@ class HomeApi
 {
     public function index()
     {
-        // 只有这一行查询，绝对干净
-        $job = Db::table('job')->limit(4)->select();
+        $data = [
+            'job'   => Db::table('job')->limit(4)->select(),
+            'news'  => Db::table('news')->limit(4)->select(),
+            'topic' => Db::table('forum_topic')->limit(4)->select(),
+        ];
 
-        return json([
-            'code' => 200,
-            'job'  => $job
-        ]);
+        return json($data);
     }
 }

@@ -43,9 +43,9 @@
                             <el-button type="text" @click="goTo('/job/list')">更多</el-button>
                         </div>
                         <el-table :data="jobList" border size="small" v-loading="loading">
-                            <el-table-column prop="title" label="职位名称" />
+                            <el-table-column prop="job_name" label="职位名称" />
                             <el-table-column prop="salary" label="薪资" />
-                            <el-table-column prop="address" label="工作地点" />
+                            <el-table-column prop="city" label="工作地点" />
                         </el-table>
                     </el-card>
                 </el-col>
