@@ -42,13 +42,14 @@
 
         <!-- 表格 -->
         <div class="table-box">
-            <el-table :data="tableData" border stripe style="width: 100%" header-cell-class-name="table-header">
+            <el-table :data="tableData" border stripe style="width: 100%" header-cell-class-name="table-header"
+                v-loading="loading">
                 <el-table-column label="序号" type="index" width="70" align="center" />
                 <el-table-column label="话题标题" prop="title" min-width="220" />
                 <el-table-column label="发布人" prop="author" width="120" />
-                <el-table-column label="浏览量" prop="view" width="100" align="center" />
-                <el-table-column label="评论数" prop="comment" width="100" align="center" />
-                <el-table-column label="发布时间" prop="createTime" width="180" />
+                <el-table-column label="查看人数" prop="views" width="100" align="center" />
+                <el-table-column label="评论数" prop="comments" width="100" align="center" />
+                <el-table-column label="发布时间" prop="create_time" width="180" />
                 <el-table-column label="状态" width="100" align="center">
                     <template #default="scope">
                         <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
@@ -67,7 +68,7 @@
 
             <!-- 分页 -->
             <div class="pagination-box">
-                <el-pagination v-model:current-page="page" v-model:page-size="limit" total="86"
+                <el-pagination v-model:current-page="page" v-model:page-size="limit" :total="total"
                     layout="total, sizes, prev, pager, next, jumper" @size-change="getList" @current-change="getList" />
             </div>
         </div>
@@ -91,7 +92,7 @@
             <template #footer>
                 <div class="dialog-footer">
                     <el-button @click="dialogVisible = false">取消</el-button>
-                    <el-button type="primary" @click="submitForm">确认提交</el-button>
+                    <el-button type="primary" @click="submitForm" :loading="submitLoading">确认提交</el-button>
                 </div>
             </template>
         </el-dialog>
@@ -102,6 +103,9 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Refresh } from '@element-plus/icons-vue'
+import axios from 'axios'
+
+const baseURL = 'http://127.0.0.1:8000/api'
 
 // 查询条件
 const searchForm = reactive({
@@ -109,13 +113,16 @@ const searchForm = reactive({
     status: ''
 })
 
-// 表格
+// 表格数据与分页
 const tableData = ref([])
+const loading = ref(false)
 const page = ref(1)
 const limit = ref(10)
+const total = ref(0)
 
-// 弹窗
+// 弹窗与表单
 const dialogVisible = ref(false)
+const submitLoading = ref(false)
 const form = reactive({
     id: '',
     title: '',
@@ -126,63 +133,84 @@ const form = reactive({
     status: 1
 })
 
-// 模拟数据
-const mockData = [
-    { id: 1, title: '大家觉得今年的比赛难度如何？', author: '张三', view: 120, comment: 35, createTime: '2025-01-05 15:30', status: 1 },
-    { id: 2, title: '前端开发学习路线分享', author: '李四', view: 340, comment: 58, createTime: '2025-01-06 09:20', status: 1 },
-    { id: 3, title: '后端技术交流群', author: '王五', view: 85, comment: 12, createTime: '2025-01-07 16:10', status: 0 },
-    { id: 4, title: '项目部署遇到的坑', author: '赵六', view: 210, comment: 43, createTime: '2025-01-08 11:40', status: 1 },
-]
-
-// 获取列表
-const getList = () => {
-    tableData.value = mockData
+// 获取话题列表
+const getList = async () => {
+    loading.value = true
+    try {
+        const res = await axios.get(baseURL + '/forum/topic/list', {
+            params: {
+                page: page.value,
+                limit: limit.value,
+                title: searchForm.title,
+                status: searchForm.status
+            }
+        })
+        tableData.value = res.data.data.list
+        total.value = res.data.data.total
+    } catch (e) {
+        ElMessage.error('加载话题列表失败')
+    } finally {
+        loading.value = false
+    }
 }
 
-// 重置
+// 重置搜索
 const resetSearch = () => {
     searchForm.title = ''
     searchForm.status = ''
+    page.value = 1
     getList()
 }
 
-// 新增
+// 新增话题
 const handleAdd = () => {
     dialogVisible.value = true
-    Object.assign(form, { id: '', title: '', content: '', status: 1 })
+    Object.assign(form, {
+        id: '',
+        title: '',
+        content: '',
+        status: 1
+    })
 }
 
-// 编辑
+// 编辑话题
 const handleEdit = (row) => {
     dialogVisible.value = true
     Object.assign(form, row)
 }
 
-// 详情
+// 查看详情
 const handleDetail = (row) => {
     ElMessage.info(`查看：${row.title}`)
 }
 
-// 删除
+// 删除话题
 const handleDelete = async (id) => {
     await ElMessageBox.confirm('确定删除该话题吗？', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
     })
-    tableData.value = tableData.value.filter(item => item.id !== id)
+    await axios.post(baseURL + '/forum/topic/delete', { id })
     ElMessage.success('删除成功！')
+    getList()
 }
 
-// 提交
-const submitForm = () => {
+// 提交表单（新增/编辑）
+const submitForm = async () => {
     if (!form.title) {
         ElMessage.warning('请输入标题')
         return
     }
-    dialogVisible.value = false
-    ElMessage.success('操作成功！')
-    getList()
+    submitLoading.value = true
+    try {
+        await axios.post(baseURL + '/forum/topic/save', form)
+        ElMessage.success('操作成功！')
+        dialogVisible.value = false
+        getList()
+    } finally {
+        submitLoading.value = false
+    }
 }
 
 onMounted(() => {

@@ -21,3 +21,8 @@ Route::get('api/news/detail/:id', 'app\controller\NewsController@detail');
 
 // CourseList
 Route::get('api/course/list', 'app\controller\CourseController@list');
+
+// forum
+Route::get('api/forum/topic/list', 'app\controller\ForumTopicController@list');
+Route::post('api/forum/topic/save', 'app\controller\ForumTopicController@save');
+Route::post('api/forum/topic/delete', 'app\controller\ForumTopicController@delete');
