@@ -1,24 +1,42 @@
 <template>
     <div class="layout-container">
-        <!-- 顶部头部 -->
+        <!-- 顶部头部 → 已优化更精美 -->
         <el-header class="layout-header">
-            <div class="title">自贸港人才服务系统</div>
-
-            <!-- 已登录：显示用户名 + 退出 -->
-            <div class="user-info" v-if="userInfo">
-                <span>欢迎：{{ userInfo.username }}</span>
-                <el-button text type="danger" @click="logout">退出登录</el-button>
+            <div class="header-left">
+                <div class="logo">
+                    <el-icon size="26" color="#fff" style="margin-right: 12px">
+                        <OfficeBuilding />
+                    </el-icon>
+                    <div class="title">自贸港人才服务系统</div>
+                </div>
             </div>
 
-            <!-- 未登录：显示 登录 + 注册 按钮 -->
-            <div class="login-box" v-else>
-                <el-button text class="white-btn" @click="goLogin">登录</el-button>
-                <el-button type="primary" class="reg-btn" @click="goRegister">注册</el-button>
+            <!-- 右侧用户区 -->
+            <div class="header-right">
+                <!-- 已登录 -->
+                <div class="user-info" v-if="userInfo">
+                    <el-icon color="#fff" style="margin-right: 6px">
+                        <User />
+                    </el-icon>
+                    <span class="username">欢迎：{{ userInfo.username }}</span>
+                    <el-button text type="warning" @click="logout" class="logout-btn">
+                        退出登录
+                    </el-button>
+                </div>
+
+                <!-- 未登录 -->
+                <div class="login-box" v-else>
+                    <el-button text class="login-btn" @click="goLogin">
+                        登录
+                    </el-button>
+                    <el-button type="primary" class="register-btn" @click="goRegister">
+                        注册
+                    </el-button>
+                </div>
             </div>
         </el-header>
 
         <el-container class="layout-main">
-            <!-- 左侧侧边栏导航 -->
             <el-aside width="220px" class="layout-aside">
                 <el-menu default-active="$route.path" router class="side-menu">
                     <el-menu-item index="/home">
@@ -88,7 +106,6 @@
                 </el-menu>
             </el-aside>
 
-            <!-- 右侧主体内容 -->
             <el-main class="layout-content">
                 <router-view />
             </el-main>
@@ -101,14 +118,17 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
-    House, Briefcase, User, OfficeBuilding,
-    Document, ChatDotRound
+    House,
+    Briefcase,
+    User,
+    OfficeBuilding,
+    Document,
+    ChatDotRound,
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userInfo = ref(null)
 
-// 获取登录用户
 onMounted(() => {
     const info = localStorage.getItem('userInfo')
     if (info) {
@@ -116,7 +136,6 @@ onMounted(() => {
     }
 })
 
-// 退出登录
 const logout = () => {
     localStorage.removeItem('userInfo')
     userInfo.value = null
@@ -124,12 +143,10 @@ const logout = () => {
     router.push('/login')
 }
 
-// 去登录
 const goLogin = () => {
     router.push('/login')
 }
 
-// 去注册
 const goRegister = () => {
     router.push('/register')
 }
@@ -143,17 +160,103 @@ const goRegister = () => {
     flex-direction: column;
 }
 
+/* ========== 精美头部导航栏 ========== */
 .layout-header {
-    height: 60px;
-    background: #409eff;
+    height: 65px;
+    background: linear-gradient(135deg, #409eff 0%, #2e86de 100%);
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 30px;
     color: #fff;
-    font-size: 18px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 99;
 }
 
+/* 左侧 LOGO + 标题 */
+.header-left {
+    display: flex;
+    align-items: center;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.title {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+/* 右侧用户区 */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* 登录注册按钮 */
+.login-box {
+    display: flex;
+    gap: 12px;
+}
+
+.login-btn {
+    color: #fff !important;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    padding: 6px 18px !important;
+    border-radius: 6px !important;
+    transition: all 0.3s;
+}
+
+.login-btn:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: #fff !important;
+}
+
+.register-btn {
+    background: #fff !important;
+    color: #409eff !important;
+    font-weight: 500;
+    padding: 6px 20px !important;
+    border-radius: 6px !important;
+    transition: all 0.3s;
+}
+
+.register-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* 用户信息样式 */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+}
+
+.username {
+    font-weight: 500;
+    margin-right: 6px;
+}
+
+.logout-btn {
+    color: #ffefef !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-radius: 4px;
+    padding: 4px 12px;
+}
+
+.logout-btn:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* ========== 主体布局 ========== */
 .layout-main {
     flex: 1;
 }
@@ -172,27 +275,5 @@ const goRegister = () => {
     background: #f5f7fa;
     padding: 20px;
     overflow-y: auto;
-}
-
-/* 未登录按钮样式 */
-.login-box {
-    display: flex;
-    gap: 10px;
-}
-
-.white-btn {
-    color: #fff !important;
-    border-color: #fff !important;
-}
-
-.white-btn:hover {
-    color: #f5f5f5 !important;
-    border-color: #f5f5f5 !important;
-}
-
-.reg-btn {
-    background: #fff !important;
-    color: #409eff !important;
-    border: none !important;
 }
 </style>

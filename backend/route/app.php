@@ -1,13 +1,4 @@
 <?php
-// +----------------------------------------------------------------------
-// | ThinkPHP [ WE CAN DO IT JUST THINK ]
-// +----------------------------------------------------------------------
-// | Copyright (c) 2006~2018 http://thinkphp.cn All rights reserved.
-// +----------------------------------------------------------------------
-// | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
-// +----------------------------------------------------------------------
-// | Author: liu21st <liu21st@gmail.com>
-// +----------------------------------------------------------------------
 use think\facade\Route;
 
 Route::get('think', function () {
@@ -16,3 +7,9 @@ Route::get('think', function () {
 
 Route::get('hello/:name', 'index/hello');
 Route::get('api/home', 'HomeApi/index');
+
+// jobList
+Route::get('api/job/list', 'app\controller\JobController@index');
+Route::post('api/job/save', 'app\controller\JobController@save');
+Route::post('api/job/delete/:id', 'app\controller\JobController@delete');
+Route::post('api/job/switchStatus', 'app\controller\JobController@switchStatus');
