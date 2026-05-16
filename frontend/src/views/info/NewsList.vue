@@ -10,9 +10,9 @@
                 <div class="left">
                     <div class="title">{{ item.title }}</div>
                     <div class="info">
-                        <span>{{ item.date }}</span>
+                        <span>{{ item.create_time }}</span>
                         <span>{{ item.source }}</span>
-                        <el-tag size="small" :type="item.type === '政策' ? 'primary' : 'success'">
+                        <el-tag size="small" :type="item.type === 1 ? 'primary' : 'success'">
                             {{ item.type }}
                         </el-tag>
                     </div>
@@ -30,58 +30,30 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ArrowRight } from '@element-plus/icons-vue'
+import axios from 'axios'
 
-const newsList = ref([
-    {
-        id: 1,
-        title: '海南自贸港人才引进政策最新调整，落户条件进一步放宽',
-        date: '2025-05-20',
-        source: '海南省人社厅',
-        type: '政策'
-    },
-    {
-        id: 2,
-        title: '人才住房补贴申请流程简化，线上即可办理无需跑腿',
-        date: '2025-05-19',
-        source: '海南政务服务网',
-        type: '政策'
-    },
-    {
-        id: 3,
-        title: '2025年海南春季大型人才招聘会即将开启，上万岗位等你来',
-        date: '2025-05-18',
-        source: '海南人才集团',
-        type: '公告'
-    },
-    {
-        id: 4,
-        title: '自贸港企业吸纳高校毕业生可享受税收减免与社保补贴',
-        date: '2025-05-17',
-        source: '海南省税务局',
-        type: '政策'
-    },
-    {
-        id: 5,
-        title: '海南人才子女入学、医疗保障、安居房政策全面落地',
-        date: '2025-05-16',
-        source: '海南省教育厅',
-        type: '公告'
-    },
-    {
-        id: 6,
-        title: '数字经济、新能源、生物医药成为海南紧缺人才重点行业',
-        date: '2025-05-15',
-        source: '海南发改委',
-        type: '资讯'
-    }
-])
+const newsList = ref([])
+const baseURL = 'http://127.0.0.1:8000/api'
 
-const goDetail = (item) => {
-    ElMessage.info('查看：' + item.title)
+// 获取资讯列表
+const getNewsList = async () => {
+    const res = await axios.get(baseURL + '/news/list')
+    newsList.value = res.data.data
 }
+
+// 查看详情
+const goDetail = async (item) => {
+    const res = await axios.get(baseURL + '/news/detail/' + item.id)
+    ElMessage.info('查看：' + item.title)
+    console.log('资讯详情：', res.data.data)
+}
+
+onMounted(() => {
+    getNewsList()
+})
 </script>
 
 <style scoped>

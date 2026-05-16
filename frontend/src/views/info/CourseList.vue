@@ -1,175 +1,228 @@
 <template>
     <div class="page-container">
-        <div class="page-title">
-            <h2>人才培训课程</h2>
-            <p>技能提升、职业认证、自贸港专项培训</p>
+        <!-- 顶部渐变标题栏 -->
+        <div class="page-top">
+            <div class="title-wrap">
+                <h2>人才培训课程</h2>
+                <p>技能提升、职业认证、自贸港专项精品培训课程</p>
+            </div>
         </div>
 
-        <el-row :gutter="20">
+        <!-- 课程卡片列表 -->
+        <el-row :gutter="24" class="course-wrap">
             <el-col :span="8" v-for="item in courseList" :key="item.id">
-                <el-card class="course-card" shadow="hover">
-                    <div class="course-tag" :class="item.tag === '推荐' ? 'tag-recommend' : 'tag-normal'">
-                        {{ item.tag }}
+                <div class="course-card">
+                    <!-- 顶部标签 -->
+                    <div class="card-label" :class="item.price == 0 ? 'free-label' : 'pay-label'">
+                        {{ item.price == 0 ? '免费课程' : '精品付费' }}
                     </div>
-                    <div class="course-name">{{ item.title }}</div>
-                    <div class="course-desc">{{ item.desc }}</div>
-                    <div class="course-info">
-                        <span>{{ item.teacher }}</span>
-                        <span>{{ item.time }}</span>
+
+                    <!-- 课程封面占位 -->
+                    <div class="course-cover">
+                        <img :src="item.course_img" alt="课程封面" />
                     </div>
-                    <div class="course-bottom">
-                        <div class="price">{{ item.price }}</div>
-                        <el-button type="primary" size="small">立即报名</el-button>
+
+                    <!-- 课程内容 -->
+                    <div class="course-content">
+                        <h3 class="course-title">{{ item.course_name }}</h3>
+                        <p class="course-intro">{{ item.course_intro }}</p>
+
+                        <div class="course-data">
+                            <div class="data-item">
+                                <i class="el-icon-user-solid"></i>
+                                <span>{{ item.study_num }}人已学习</span>
+                            </div>
+                            <div class="data-item">
+                                <i class="el-icon-time"></i>
+                                <span>{{ item.create_time }}</span>
+                            </div>
+                        </div>
+
+                        <!-- 底部价格与按钮 -->
+                        <div class="course-footer">
+                            <div class="course-price">
+                                <span v-if="item.price == 0">免费学习</span>
+                                <span v-else class="money">¥{{ item.price }}</span>
+                            </div>
+                            <el-button type="primary" size="small" class="join-btn">立即报名</el-button>
+                        </div>
                     </div>
-                </el-card>
+                </div>
             </el-col>
         </el-row>
+
+        <!-- 空数据提示 -->
+        <el-empty v-if="courseList.length === 0" description="暂无上架培训课程" />
     </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import axios from 'axios'
 
-const courseList = ref([
-    {
-        id: 1,
-        title: 'Vue3 + ElementPlus 实战开发',
-        desc: '从零搭建后台管理系统，掌握前端核心技能',
-        teacher: '资深讲师',
-        time: '40课时',
-        price: '免费',
-        tag: '推荐'
-    },
-    {
-        id: 2,
-        title: '海南自贸港人才政策解读',
-        desc: '落户、补贴、认定、税收优惠全解析',
-        teacher: '官方讲师',
-        time: '12课时',
-        price: '免费',
-        tag: '热门'
-    },
-    {
-        id: 3,
-        title: 'Java后端开发进阶',
-        desc: 'SpringBoot / Vue 全栈项目实战',
-        teacher: '高级架构师',
-        time: '50课时',
-        price: '免费',
-        tag: '推荐'
-    },
-    {
-        id: 4,
-        title: '职场沟通与职业素养',
-        desc: '提升职场竞争力，快速适应企业环境',
-        teacher: '职业导师',
-        time: '8课时',
-        price: '免费',
-        tag: '基础'
-    },
-    {
-        id: 5,
-        title: '面试技巧与简历优化',
-        desc: '名企面试真题讲解，简历高分技巧',
-        teacher: 'HR专家',
-        time: '10课时',
-        price: '免费',
-        tag: '热门'
-    },
-    {
-        id: 6,
-        title: '计算机软考考证辅导',
-        desc: '职称评定、积分落户必备证书培训',
-        teacher: '考证专家',
-        time: '30课时',
-        price: '免费',
-        tag: '推荐'
-    }
-])
+const courseList = ref([])
+const baseUrl = 'http://127.0.0.1:8000/api'
+
+// 获取课程数据
+const getCourseData = async () => {
+    const res = await axios.get(`${baseUrl}/course/list`)
+    courseList.value = res.data.data
+}
+
+onMounted(() => {
+    getCourseData()
+})
 </script>
 
 <style scoped>
+/* 页面整体 */
 .page-container {
-    padding: 20px 0;
+    padding: 30px;
+    background-color: #f7f9fc;
+    min-height: 100vh;
 }
 
-.page-title {
-    margin-bottom: 25px;
+/* 顶部渐变标题区 */
+.page-top {
+    background: linear-gradient(135deg, #409eff 0%, #73c0fc 100%);
+    border-radius: 16px;
+    padding: 35px 40px;
+    margin-bottom: 30px;
+    box-shadow: 0 6px 18px rgba(64, 158, 255, 0.25);
 }
 
-.page-title h2 {
-    font-size: 24px;
-    color: #333;
-    margin: 0 0 6px;
+.title-wrap h2 {
+    font-size: 28px;
+    color: #ffffff;
+    margin: 0 0 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
 }
 
-.page-title p {
-    color: #999;
+.title-wrap p {
+    font-size: 15px;
+    color: #e8f4ff;
     margin: 0;
+    opacity: 0.9;
 }
 
+/* 课程外层布局 */
+.course-wrap {
+    margin: 0 auto;
+}
+
+/* 课程卡片主样式 */
 .course-card {
-    border-radius: 12px;
+    background: #fff;
+    border-radius: 18px;
     overflow: hidden;
     position: relative;
-    transition: all 0.3s;
+    margin-bottom: 28px;
+    transition: all 0.35s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
 .course-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(64, 158, 255, 0.15);
+    transform: translateY(-8px);
+    box-shadow: 0 12px 30px rgba(64, 158, 255, 0.18);
 }
 
-.course-tag {
+/* 课程标签 */
+.card-label {
     position: absolute;
-    top: 10px;
-    right: 10px;
-    padding: 2px 8px;
-    border-radius: 4px;
+    top: 16px;
+    left: 16px;
+    padding: 4px 12px;
+    border-radius: 30px;
     font-size: 12px;
     color: #fff;
+    z-index: 2;
 }
 
-.tag-recommend {
-    background: #409eff;
+.free-label {
+    background: linear-gradient(90deg, #67c23a, #85e05c);
 }
 
-.tag-normal {
-    background: #67c23a;
+.pay-label {
+    background: linear-gradient(90deg, #e6a23c, #f7c466);
 }
 
-.course-name {
-    font-size: 16px;
-    font-weight: 500;
-    color: #333;
-    margin-bottom: 8px;
-    margin-top: 10px;
-}
-
-.course-desc {
-    font-size: 13px;
-    color: #999;
-    line-height: 1.5;
-    margin-bottom: 12px;
-}
-
-.course-info {
-    font-size: 12px;
-    color: #666;
+/* 课程封面 */
+.course-cover {
+    width: 100%;
+    height: 160px;
+    background-color: #f2f6fb;
     display: flex;
-    justify-content: space-between;
-    margin-bottom: 15px;
-}
-
-.course-bottom {
-    display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: center;
 }
 
-.price {
+.course-cover img {
+    width: 80px;
+    opacity: 0.7;
+}
+
+/* 课程文字内容 */
+.course-content {
+    padding: 20px;
+}
+
+.course-title {
+    font-size: 17px;
+    color: #2a3342;
+    margin: 0 0 12px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.course-intro {
+    font-size: 13px;
+    color: #8892a0;
+    line-height: 1.6;
+    margin: 0 0 18px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* 数据统计行 */
+.course-data {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #667486;
+    margin-bottom: 20px;
+}
+
+.data-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* 底部价格按钮 */
+.course-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 15px;
+    border-top: 1px solid #f0f3f8;
+}
+
+.course-price span {
+    font-size: 15px;
+    font-weight: 600;
+    color: #409eff;
+}
+
+.course-price .money {
     color: #f56c6c;
-    font-weight: bold;
-    font-size: 16px;
+    font-size: 18px;
+}
+
+.join-btn {
+    border-radius: 20px;
+    padding: 5px 16px !important;
 }
 </style>
