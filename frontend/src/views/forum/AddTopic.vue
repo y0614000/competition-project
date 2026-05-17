@@ -6,7 +6,7 @@
 
         <div class="form-box">
             <el-form ref="formRef" :model="form" label-width="100px" class="topic-form">
-                <el-form-item label="话题标题" prop="title">
+                <el-form-item label="话题标题">
                     <el-input v-model="form.title" placeholder="请输入话题标题" maxlength="100" show-word-limit />
                 </el-form-item>
 
@@ -24,15 +24,8 @@
                         maxlength="1000" show-word-limit />
                 </el-form-item>
 
-                <el-form-item label="是否公开">
-                    <el-radio-group v-model="form.isPublic">
-                        <el-radio :label="true">公开</el-radio>
-                        <el-radio :label="false">仅自己可见</el-radio>
-                    </el-radio-group>
-                </el-form-item>
-
                 <el-form-item>
-                    <el-button type="primary" @click="submitTopic">
+                    <el-button type="primary" @click="submitTopic" :loading="loading">
                         <el-icon>
                             <Check />
                         </el-icon>
@@ -55,20 +48,27 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Check, Back } from '@element-plus/icons-vue'
+import axios from 'axios'
 
 const router = useRouter()
+const loading = ref(false)
 
-// 表单数据
-const formRef = ref()
+// ✅ 必须先定义 form，再用在模板里
 const form = reactive({
     title: '',
     type: 'tech',
-    content: '',
-    isPublic: true
+    content: ''
 })
 
+// 获取用户ID
+const getUserId = () => {
+    const user = localStorage.getItem('userInfo')
+    if (!user) return null
+    return JSON.parse(user).id
+}
+
 // 提交发布
-const submitTopic = () => {
+const submitTopic = async () => {
     if (!form.title.trim()) {
         ElMessage.warning('请输入话题标题')
         return
@@ -78,18 +78,38 @@ const submitTopic = () => {
         return
     }
 
-    // 模拟发布成功
-    ElMessage.success('话题发布成功！')
+    const uid = getUserId()
+    if (!uid) {
+        ElMessage.warning('请先登录')
+        return
+    }
 
-    // 发布后返回列表
-    setTimeout(() => {
-        router.push('/forum/topicList')
-    }, 800)
+    loading.value = true
+    try {
+        const res = await axios.post('http://127.0.0.1:8000/api/forum/topic/save', {
+            title: form.title,
+            content: form.content,
+            user_id: uid,
+            author: '用户'
+        })
+
+        if (res.data.code === 200) {
+            ElMessage.success('发布成功！')
+            router.push('/topicList')
+        } else {
+            ElMessage.error(res.data.msg)
+        }
+    } catch (e) {
+        console.error(e)
+        ElMessage.error('发布失败')
+    } finally {
+        loading.value = false
+    }
 }
 
-// 返回列表
+// 返回
 const goBack = () => {
-    router.push('/forum/topicList')
+    router.push('/topicList')
 }
 </script>
 

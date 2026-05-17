@@ -1,6 +1,5 @@
 <template>
     <div class="topic-list-container">
-        <!-- 顶部标题 -->
         <div class="page-header">
             <h2>话题管理</h2>
             <el-button type="primary" @click="handleAdd">
@@ -11,7 +10,6 @@
             </el-button>
         </div>
 
-        <!-- 搜索筛选 -->
         <div class="search-box">
             <el-form :inline="true" :model="searchForm" class="search-form">
                 <el-form-item label="话题标题">
@@ -40,16 +38,15 @@
             </el-form>
         </div>
 
-        <!-- 表格 -->
         <div class="table-box">
             <el-table :data="tableData" border stripe style="width: 100%" header-cell-class-name="table-header"
                 v-loading="loading">
                 <el-table-column label="序号" type="index" width="70" align="center" />
                 <el-table-column label="话题标题" prop="title" min-width="220" />
-                <el-table-column label="发布人" prop="author" width="120" />
-                <el-table-column label="查看人数" prop="views" width="100" align="center" />
-                <el-table-column label="评论数" prop="comments" width="100" align="center" />
-                <el-table-column label="发布时间" prop="create_time" width="180" />
+                <el-table-column label="发布人" prop="user_id" width="120" align="center" />
+                <el-table-column label="查看人数" prop="view" width="100" align="center" />
+                <el-table-column label="评论数" prop="comment" width="100" align="center" />
+                <el-table-column label="发布时间" prop="createTime" width="180" align="center" />
                 <el-table-column label="状态" width="100" align="center">
                     <template #default="scope">
                         <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
@@ -66,14 +63,12 @@
                 </el-table-column>
             </el-table>
 
-            <!-- 分页 -->
             <div class="pagination-box">
                 <el-pagination v-model:current-page="page" v-model:page-size="limit" :total="total"
                     layout="total, sizes, prev, pager, next, jumper" @size-change="getList" @current-change="getList" />
             </div>
         </div>
 
-        <!-- 新增 / 编辑弹窗 -->
         <el-dialog v-model="dialogVisible" title="话题信息" width="650px" destroy-on-close>
             <el-form ref="formRef" :model="form" label-width="100px" class="dialog-form">
                 <el-form-item label="话题标题" prop="title">
@@ -107,33 +102,23 @@ import axios from 'axios'
 
 const baseURL = 'http://127.0.0.1:8000/api'
 
-// 查询条件
-const searchForm = reactive({
-    title: '',
-    status: ''
-})
-
-// 表格数据与分页
+const searchForm = reactive({ title: '', status: '' })
 const tableData = ref([])
 const loading = ref(false)
 const page = ref(1)
 const limit = ref(10)
 const total = ref(0)
 
-// 弹窗与表单
 const dialogVisible = ref(false)
 const submitLoading = ref(false)
 const form = reactive({
     id: '',
     title: '',
     content: '',
-    author: '管理员',
-    view: 0,
-    comment: 0,
     status: 1
 })
 
-// 获取话题列表
+// 获取列表（已适配你的后端）
 const getList = async () => {
     loading.value = true
     try {
@@ -145,16 +130,17 @@ const getList = async () => {
                 status: searchForm.status
             }
         })
-        tableData.value = res.data.data.list
-        total.value = res.data.data.total
+        if (res.data.code === 200) {
+            tableData.value = res.data.data.list
+            total.value = res.data.data.total
+        }
     } catch (e) {
-        ElMessage.error('加载话题列表失败')
+        ElMessage.error('加载失败')
     } finally {
         loading.value = false
     }
 }
 
-// 重置搜索
 const resetSearch = () => {
     searchForm.title = ''
     searchForm.status = ''
@@ -162,60 +148,49 @@ const resetSearch = () => {
     getList()
 }
 
-// 新增话题
 const handleAdd = () => {
     dialogVisible.value = true
-    Object.assign(form, {
-        id: '',
-        title: '',
-        content: '',
-        status: 1
-    })
+    Object.assign(form, { id: '', title: '', content: '', status: 1 })
 }
 
-// 编辑话题
 const handleEdit = (row) => {
     dialogVisible.value = true
     Object.assign(form, row)
 }
 
-// 查看详情
 const handleDetail = (row) => {
-    ElMessage.info(`查看：${row.title}`)
+    ElMessage.info('查看：' + row.title)
 }
 
-// 删除话题
+// 删除
 const handleDelete = async (id) => {
-    await ElMessageBox.confirm('确定删除该话题吗？', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-    })
-    await axios.post(baseURL + '/forum/topic/delete', { id })
-    ElMessage.success('删除成功！')
-    getList()
+    try {
+        await ElMessageBox.confirm('确定删除？', '提示')
+        await axios.post(baseURL + '/forum/topic/delete', { id })
+        ElMessage.success('删除成功')
+        getList()
+    } catch {
+        ElMessage.info('已取消')
+    }
 }
 
-// 提交表单（新增/编辑）
+// 提交
 const submitForm = async () => {
-    if (!form.title) {
-        ElMessage.warning('请输入标题')
-        return
-    }
+    if (!form.title) return ElMessage.warning('请输入标题')
     submitLoading.value = true
     try {
         await axios.post(baseURL + '/forum/topic/save', form)
-        ElMessage.success('操作成功！')
+        ElMessage.success('操作成功')
         dialogVisible.value = false
         getList()
+    } catch (e) {
+        ElMessage.error('操作失败')
     } finally {
         submitLoading.value = false
     }
 }
 
-onMounted(() => {
-    getList()
-})
+onMounted(() => { getList() })
 </script>
 
 <style scoped>
@@ -235,23 +210,20 @@ onMounted(() => {
 .page-header h2 {
     margin: 0;
     font-size: 22px;
-    font-weight: 600;
     color: #333;
 }
 
 .search-box {
     background: #fff;
-    padding: 18px 20px;
+    padding: 18px;
     border-radius: 8px;
     margin-bottom: 20px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .table-box {
     background: #fff;
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .pagination-box {
@@ -260,7 +232,7 @@ onMounted(() => {
 }
 
 :deep(.table-header) {
-    background-color: #f8f9fc !important;
+    background: #f8f9fc !important;
     font-weight: 600;
 }
 
