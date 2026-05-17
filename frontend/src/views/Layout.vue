@@ -1,7 +1,7 @@
 <template>
     <div class="layout-container">
-        <!-- 顶部头部 → 已优化更精美 -->
-        <el-header class="layout-header">
+        <!-- 顶部悬浮头部 -->
+        <el-header class="layout-header fixed-header">
             <div class="header-left">
                 <div class="logo">
                     <el-icon size="26" color="#fff" style="margin-right: 12px">
@@ -11,9 +11,7 @@
                 </div>
             </div>
 
-            <!-- 右侧用户区 -->
             <div class="header-right">
-                <!-- 已登录 -->
                 <div class="user-info" v-if="userInfo">
                     <el-icon color="#fff" style="margin-right: 6px">
                         <User />
@@ -24,7 +22,6 @@
                     </el-button>
                 </div>
 
-                <!-- 未登录 -->
                 <div class="login-box" v-else>
                     <el-button text class="login-btn" @click="goLogin">
                         登录
@@ -37,7 +34,8 @@
         </el-header>
 
         <el-container class="layout-main">
-            <el-aside width="220px" class="layout-aside">
+            <!-- 左侧悬浮侧边栏 -->
+            <el-aside width="220px" class="layout-aside fixed-aside">
                 <el-menu default-active="$route.path" router class="side-menu">
                     <el-menu-item index="/home">
                         <el-icon>
@@ -106,6 +104,7 @@
                 </el-menu>
             </el-aside>
 
+            <!-- 右侧内容区 -->
             <el-main class="layout-content">
                 <router-view />
             </el-main>
@@ -160,7 +159,7 @@ const goRegister = () => {
     flex-direction: column;
 }
 
-/* ========== 精美头部导航栏 ========== */
+/* ========== 顶部悬浮 ========== */
 .layout-header {
     height: 65px;
     background: linear-gradient(135deg, #409eff 0%, #2e86de 100%);
@@ -170,11 +169,52 @@ const goRegister = () => {
     padding: 0 30px;
     color: #fff;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    position: relative;
     z-index: 99;
 }
 
-/* 左侧 LOGO + 标题 */
+.fixed-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+}
+
+/* ========== 左侧悬浮 ========== */
+.layout-aside {
+    background: #fff;
+    border-right: 1px solid #e6e6e6;
+    height: calc(100vh - 65px);
+}
+
+.fixed-aside {
+    position: fixed;
+    top: 65px;
+    left: 0;
+    width: 220px;
+    z-index: 999;
+    overflow-y: auto;
+}
+
+.side-menu {
+    height: 100%;
+    border-right: none;
+}
+
+/* ========== 主体布局 ========== */
+.layout-main {
+    flex: 1;
+    margin-top: 65px;
+    padding-left: 220px; /* 给左侧悬浮菜单留出位置 */
+}
+
+.layout-content {
+    background: #f5f7fa;
+    padding: 20px 30px;
+    min-height: calc(100vh - 65px);
+}
+
+/* ========== 头部样式 ========== */
 .header-left {
     display: flex;
     align-items: center;
@@ -192,14 +232,12 @@ const goRegister = () => {
     letter-spacing: 1px;
 }
 
-/* 右侧用户区 */
 .header-right {
     display: flex;
     align-items: center;
     gap: 15px;
 }
 
-/* 登录注册按钮 */
 .login-box {
     display: flex;
     gap: 12px;
@@ -232,7 +270,6 @@ const goRegister = () => {
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* 用户信息样式 */
 .user-info {
     display: flex;
     align-items: center;
@@ -254,26 +291,5 @@ const goRegister = () => {
 
 .logout-btn:hover {
     background: rgba(255, 255, 255, 0.2) !important;
-}
-
-/* ========== 主体布局 ========== */
-.layout-main {
-    flex: 1;
-}
-
-.layout-aside {
-    background: #fff;
-    border-right: 1px solid #e6e6e6;
-}
-
-.side-menu {
-    height: 100%;
-    border-right: none;
-}
-
-.layout-content {
-    background: #f5f7fa;
-    padding: 20px;
-    overflow-y: auto;
 }
 </style>

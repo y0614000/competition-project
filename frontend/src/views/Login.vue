@@ -67,8 +67,8 @@ const login = async () => {
         const res = await axios.post('http://127.0.0.1:8000/user/login', form.value)
         if (res.data.code === 1) {
             ElMessage.success('登录成功')
-            // 登录成功存 localStorage（路由守卫需要）
-            localStorage.setItem('userInfo', JSON.stringify(res.data))
+            // 把后端返回的用户信息存进去
+            localStorage.setItem('userInfo', JSON.stringify(res.data.data))
             router.push('/home')
         } else {
             ElMessage.error(res.data.msg)

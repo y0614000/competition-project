@@ -11,4 +11,5 @@ class Job extends Model
 
     // 关闭自动写入 update_time
     protected $updateTime = false;
+    protected $createTime = false;
 }
