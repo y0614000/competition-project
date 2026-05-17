@@ -13,7 +13,7 @@ const routes = [
   },
   {
     path: '/register',
-    name: 'register',
+    name: 'Register',
     component: () => import('../views/Register.vue')
   },
   // 后台布局所有子页面
@@ -51,14 +51,17 @@ const router = createRouter({
 })
 
 // 登录拦截
-// router.beforeEach((to, from, next) => {
-//   if (to.path === '/login') return next()
-//   const token = localStorage.getItem('userInfo')
-//   if (!token) {
-//     next('/login')
-//   } else {
-//     next()
-//   }
-// })
+router.beforeEach((to, from, next) => {
+  // 放行：登录页、注册页
+  if (to.path === '/login' || to.path === '/register') return next()
+
+  // 其他页面需要登录
+  const token = localStorage.getItem('userInfo')
+  if (!token) {
+    next('/login')
+  } else {
+    next()
+  }
+})
 
 export default router

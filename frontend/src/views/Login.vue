@@ -1,7 +1,6 @@
 <template>
     <div class="login-page">
         <div class="login-container">
-            <!-- 左侧：图片区域 -->
             <div class="login-left">
                 <div class="left-content">
                     <h1>自贸港人才服务系统</h1>
@@ -12,7 +11,6 @@
                 </div>
             </div>
 
-            <!-- 右侧：登录表单 -->
             <div class="login-right">
                 <div class="form-wrapper">
                     <h2>欢迎登录</h2>
@@ -28,19 +26,12 @@
                                 prefix-icon="Lock" />
                         </el-form-item>
 
-                        <el-form-item label="身份">
-                            <el-select v-model="form.role" placeholder="请选择身份" size="large">
-                                <el-option label="求职者" :value="1"></el-option>
-                                <el-option label="企业" :value="2"></el-option>
-                            </el-select>
-                        </el-form-item>
-
                         <el-form-item class="btn-wrap">
-                            <el-button type="primary" @click="login" size="large" class="login-btn">
+                            <el-button type="primary" :loading="loading" @click="login" size="large" class="login-btn">
                                 立即登录
                             </el-button>
                             <span class="split-line"></span>
-                            <el-button text @click="register" class="reg-text-btn">
+                            <el-button text @click="toRegister" class="reg-text-btn">
                                 没有账号？去注册
                             </el-button>
                         </el-form-item>
@@ -52,39 +43,50 @@
 </template>
 
 <script setup>
-import { ref, getCurrentInstance } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
+import axios from 'axios'
 
-const { proxy } = getCurrentInstance()
 const router = useRouter()
+const loading = ref(false)
 const form = ref({
     username: '',
-    password: '',
-    role: 1
+    password: ''
 })
 
-// // 登录
-// const login = async () => {
-//     if (!form.value.username || !form.value.password) {
-//         return ElMessage.warning('请输入账号密码')
-//     }
-//     ElMessage.success('登录成功')
-//     router.push('/home')
-// }
+// 登录
+const login = async () => {
+    if (!form.value.username || !form.value.password) {
+        return ElMessage.warning('请输入账号密码')
+    }
 
-// // 注册
-// const register = async () => {
-//     if (!form.value.username || !form.value.password) {
-//         return ElMessage.warning('请填写完整信息')
-//     }
-//     ElMessage.success('注册成功，请登录')
-// }
+    loading.value = true
+    try {
+        const res = await axios.post('http://127.0.0.1:8000/user/login', form.value)
+        if (res.data.code === 1) {
+            ElMessage.success('登录成功')
+            // 登录成功存 localStorage（路由守卫需要）
+            localStorage.setItem('userInfo', JSON.stringify(res.data))
+            router.push('/home')
+        } else {
+            ElMessage.error(res.data.msg)
+        }
+    } catch (err) {
+        ElMessage.error('网络异常')
+    } finally {
+        loading.value = false
+    }
+}
+
+// 去注册 —— 修复完成！
+const toRegister = () => {
+    router.push('/register')
+}
 </script>
 
 <style scoped>
-/* 页面整体 */
 .login-page {
     width: 100vw;
     height: 100vh;
@@ -94,7 +96,6 @@ const form = ref({
     justify-content: center;
 }
 
-/* 登录卡片容器 */
 .login-container {
     width: 900px;
     height: 520px;
@@ -103,15 +104,8 @@ const form = ref({
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
     display: flex;
     overflow: hidden;
-    transition: all 0.3s ease;
 }
 
-.login-container:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.2);
-}
-
-/* 左侧区域 */
 .login-left {
     width: 450px;
     background: linear-gradient(135deg, #409eff 10%, #66b6ff 100%);
@@ -138,7 +132,6 @@ const form = ref({
     margin: 0 auto;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .image-box img {
@@ -147,7 +140,6 @@ const form = ref({
     object-fit: cover;
 }
 
-/* 右侧登录区域 */
 .login-right {
     flex: 1;
     display: flex;
@@ -167,12 +159,10 @@ const form = ref({
     margin-bottom: 30px;
 }
 
-/* 表单宽度 */
 .login-form {
     width: 320px;
 }
 
-/* 按钮布局 */
 .btn-wrap {
     margin-top: 20px;
     display: flex;
@@ -190,16 +180,11 @@ const form = ref({
 .split-line {
     margin: 12px 0;
     color: #ccc;
-    font-size: 14px;
 }
 
 .reg-text-btn {
     font-size: 14px;
     color: #409eff;
-    padding: 0;
-}
-
-.reg-text-btn:hover {
-    color: #2979ff;
+    cursor: pointer;
 }
 </style>
