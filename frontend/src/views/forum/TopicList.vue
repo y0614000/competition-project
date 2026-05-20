@@ -25,50 +25,48 @@
                     <el-button type="primary" @click="getList">
                         <el-icon>
                             <Search />
-                        </el-icon>
-                        查询
+                        </el-icon>查询
                     </el-button>
                     <el-button @click="resetSearch">
                         <el-icon>
                             <Refresh />
-                        </el-icon>
-                        重置
+                        </el-icon>重置
                     </el-button>
                 </el-form-item>
             </el-form>
         </div>
 
-        <div class="table-box">
-            <el-table :data="tableData" border stripe style="width: 100%" header-cell-class-name="table-header"
-                v-loading="loading">
-                <el-table-column label="序号" type="index" width="70" align="center" />
-                <el-table-column label="话题标题" prop="title" min-width="220" />
-                <el-table-column label="发布人" prop="user_id" width="120" align="center" />
-                <el-table-column label="查看人数" prop="view" width="100" align="center" />
-                <el-table-column label="评论数" prop="comment" width="100" align="center" />
-                <el-table-column label="发布时间" prop="createTime" width="180" align="center" />
-                <el-table-column label="状态" width="100" align="center">
-                    <template #default="scope">
-                        <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
-                            {{ scope.row.status === 1 ? '正常' : '隐藏' }}
+        <!-- 卡片榜单列表 -->
+        <div class="card-list" v-loading="loading">
+            <div class="card-item" v-for="(item, index) in tableData" :key="item.id">
+                <div class="rank" :class="`rank-${index + 1}`">{{ index + 1 }}</div>
+                <div class="card-body">
+                    <div class="title">{{ item.title }}</div>
+                    <div class="info">
+                        <span>浏览：{{ item.view }}</span>
+                        <span>评论：{{ item.comment }}</span>
+                        <span>时间：{{ item.createTime }}</span>
+                        <el-tag :type="item.status === 1 ? 'success' : 'danger'" size="small">
+                            {{ item.status === 1 ? '正常' : '隐藏' }}
                         </el-tag>
-                    </template>
-                </el-table-column>
-                <el-table-column label="操作" width="260" align="center">
-                    <template #default="scope">
-                        <el-button type="primary" size="small" @click="handleEdit(scope.row)">编辑</el-button>
-                        <el-button type="warning" size="small" @click="handleDetail(scope.row)">详情</el-button>
-                        <el-button type="danger" size="small" @click="handleDelete(scope.row.id)">删除</el-button>
-                    </template>
-                </el-table-column>
-            </el-table>
-
-            <div class="pagination-box">
-                <el-pagination v-model:current-page="page" v-model:page-size="limit" :total="total"
-                    layout="total, sizes, prev, pager, next, jumper" @size-change="getList" @current-change="getList" />
+                    </div>
+                </div>
+                <div class="card-operate">
+                    <el-button type="primary" size="small" @click="handleEdit(item)">编辑</el-button>
+                    <el-button type="warning" size="small" @click="handleDetail(item)">详情</el-button>
+                    <el-button type="danger" size="small" @click="handleDelete(item.id)">删除</el-button>
+                </div>
             </div>
         </div>
 
+        <!-- 分页 纯中文 -->
+        <div class="pagination-box">
+            <el-pagination v-model:current-page="page" v-model:page-size="limit" :total="total"
+                layout="total, sizes, prev, pager, next, jumper" @size-change="getList" @current-change="getList"
+                background total-text="共 {total} 条" prev-text="上一页" next-text="下一页" jumper-text="前往" />
+        </div>
+
+        <!-- 弹窗 -->
         <el-dialog v-model="dialogVisible" title="话题信息" width="650px" destroy-on-close>
             <el-form ref="formRef" :model="form" label-width="100px" class="dialog-form">
                 <el-form-item label="话题标题" prop="title">
@@ -111,36 +109,27 @@ const total = ref(0)
 
 const dialogVisible = ref(false)
 const submitLoading = ref(false)
-const form = reactive({
-    id: '',
-    title: '',
-    content: '',
-    status: 1
-})
+const form = reactive({ id: '', title: '', content: '', status: 1 })
 
-// 获取列表（已适配你的后端）
+// 获取列表
 const getList = async () => {
     loading.value = true
     try {
         const res = await axios.get(baseURL + '/forum/topic/list', {
-            params: {
-                page: page.value,
-                limit: limit.value,
-                title: searchForm.title,
-                status: searchForm.status
-            }
+            params: { page: page.value, limit: limit.value, title: searchForm.title, status: searchForm.status }
         })
         if (res.data.code === 200) {
             tableData.value = res.data.data.list
             total.value = res.data.data.total
         }
     } catch (e) {
-        ElMessage.error('加载失败')
+        ElMessage.error('数据加载失败')
     } finally {
         loading.value = false
     }
 }
 
+// 重置搜索
 const resetSearch = () => {
     searchForm.title = ''
     searchForm.status = ''
@@ -148,35 +137,38 @@ const resetSearch = () => {
     getList()
 }
 
+// 新增
 const handleAdd = () => {
     dialogVisible.value = true
     Object.assign(form, { id: '', title: '', content: '', status: 1 })
 }
 
+// 编辑
 const handleEdit = (row) => {
     dialogVisible.value = true
     Object.assign(form, row)
 }
 
+// 详情
 const handleDetail = (row) => {
-    ElMessage.info('查看：' + row.title)
+    ElMessage.info('查看话题：' + row.title)
 }
 
 // 删除
 const handleDelete = async (id) => {
     try {
-        await ElMessageBox.confirm('确定删除？', '提示')
+        await ElMessageBox.confirm('确定要删除该话题吗？', '系统提示')
         await axios.post(baseURL + '/forum/topic/delete', { id })
         ElMessage.success('删除成功')
         getList()
     } catch {
-        ElMessage.info('已取消')
+        ElMessage.info('已取消删除')
     }
 }
 
 // 提交
 const submitForm = async () => {
-    if (!form.title) return ElMessage.warning('请输入标题')
+    if (!form.title) return ElMessage.warning('请输入话题标题')
     submitLoading.value = true
     try {
         await axios.post(baseURL + '/forum/topic/save', form)
@@ -184,7 +176,7 @@ const submitForm = async () => {
         dialogVisible.value = false
         getList()
     } catch (e) {
-        ElMessage.error('操作失败')
+        ElMessage.error('操作失败，请稍后重试')
     } finally {
         submitLoading.value = false
     }
@@ -220,20 +212,87 @@ onMounted(() => { getList() })
     margin-bottom: 20px;
 }
 
-.table-box {
+/* 卡片列表样式 */
+.card-list {
     background: #fff;
-    padding: 20px;
     border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 20px;
+}
+
+.card-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 10px;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.card-item:last-child {
+    border-bottom: none;
+}
+
+/* 排名 */
+.rank {
+    width: 26px;
+    height: 26px;
+    line-height: 26px;
+    text-align: center;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 14px;
+    margin-right: 12px;
+}
+
+.rank-1 {
+    background: #ff4d4f;
+}
+
+.rank-2 {
+    background: #ff7875;
+}
+
+.rank-3 {
+    background: #ff9c9e;
+}
+
+.rank-4,
+.rank-5,
+.rank-6,
+.rank-7,
+.rank-8,
+.rank-9,
+.rank-10 {
+    background: #d9d9d9;
+}
+
+/* 内容 */
+.card-body {
+    flex: 1;
+}
+
+.title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 6px;
+}
+
+.info {
+    font-size: 13px;
+    color: #999;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+/* 操作按钮 */
+.card-operate {
+    display: flex;
+    gap: 6px;
 }
 
 .pagination-box {
-    margin-top: 20px;
     text-align: right;
-}
-
-:deep(.table-header) {
-    background: #f8f9fc !important;
-    font-weight: 600;
 }
 
 .dialog-footer {
