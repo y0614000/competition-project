@@ -5,7 +5,6 @@
       <p>查看所有投递简历，进行筛选、面试安排与审核</p>
     </div>
 
-    <!-- 搜索筛选区 -->
     <el-card shadow="hover" class="search-card">
       <el-form :model="query" inline>
         <el-form-item label="岗位">
@@ -16,20 +15,19 @@
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="query.status" placeholder="全部状态" clearable>
-            <el-option label="待处理" value="0"></el-option>
-            <el-option label="面试中" value="1"></el-option>
-            <el-option label="已录用" value="2"></el-option>
-            <el-option label="已拒绝" value="3"></el-option>
+            <el-option label="待处理" value="0" />
+            <el-option label="面试中" value="1" />
+            <el-option label="已录用" value="2" />
+            <el-option label="已拒绝" value="3" />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" icon="el-icon-search" @click="getList">搜索</el-button>
+          <el-button type="primary" @click="getList">搜索</el-button>
           <el-button @click="resetQuery">重置</el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
-    <!-- 表格 -->
     <el-card shadow="hover" style="margin-top:20px">
       <el-table :data="tableData" border stripe style="width:100%" size="small" v-loading="loading">
         <el-table-column prop="id" label="ID" width="60" align="center" />
@@ -41,14 +39,14 @@
         <el-table-column label="状态" align="center">
           <template #default="{ row }">
             <el-tag :type="row.status === 0 ? '' :
-                row.status === 1 ? 'warning' :
-                  row.status === 2 ? 'success' : 'danger'
+              row.status === 1 ? 'warning' :
+                row.status === 2 ? 'success' : 'danger'
               ">
               {{ statusMap[row.status] }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" align="center" width="220">
+        <el-table-column label="操作" align="center" width="240">
           <template #default="{ row }">
             <el-button size="small" type="primary" @click="viewResume(row)">查看简历</el-button>
             <el-button size="small" type="success" :disabled="row.status === 2 || row.status === 3"
@@ -63,13 +61,11 @@
         </el-table-column>
       </el-table>
 
-      <!-- 分页 -->
       <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="query.page"
-        :page-sizes="[5, 10, 20, 50]" :page-size="query.limit" layout="total, sizes, prev, pager, next, jumper"
+        :page-sizes="[5, 10, 20]" :page-size="query.limit" layout="total, sizes, prev, pager, next, jumper"
         :total="total" style="margin-top:15px;text-align:right" />
     </el-card>
 
-    <!-- 简历详情弹窗 -->
     <el-dialog title="简历详情" v-model="resumeVisible" width="600px">
       <div v-if="curResume">
         <p><strong>姓名：</strong>{{ curResume.userName }}</p>
@@ -110,7 +106,7 @@ const query = reactive({
   status: ''
 })
 
-// 模拟数据
+// 真实模拟数据
 const mockData = [
   {
     id: 1,
@@ -153,19 +149,57 @@ const mockData = [
     exp: 'XX互联网公司 Java开发 2025-至今',
     skill: 'SpringBoot、MySQL、Redis',
     eval: '扎实的编程基础，良好的团队协作能力。'
+  },
+  {
+    id: 4,
+    jobName: '前端开发工程师',
+    userName: '赵六',
+    phone: '13600136000',
+    education: '本科',
+    applyTime: '2026-05-13 11:12',
+    status: 3,
+    hopeJob: '前端开发',
+    edu: '海口经济学院 软件工程',
+    exp: '无',
+    skill: 'Vue、HTML、CSS',
+    eval: '应届毕业生，态度认真。'
   }
 ]
 
+// ✅【修复】获取列表 + 搜索筛选
 const getList = () => {
   loading.value = true
   setTimeout(() => {
-    // 实际项目替换为 proxy.$http.get('/admin/apply/list', { params: query })
-    tableData.value = mockData
-    total.value = mockData.length
+    let data = [...mockData]
+
+    // 筛选岗位
+    if (query.jobName) {
+      data = data.filter(item =>
+        item.jobName.includes(query.jobName)
+      )
+    }
+
+    // 筛选姓名
+    if (query.userName) {
+      data = data.filter(item =>
+        item.userName.includes(query.userName)
+      )
+    }
+
+    // 筛选状态
+    if (query.status !== '') {
+      data = data.filter(item =>
+        item.status == query.status
+      )
+    }
+
+    tableData.value = data
+    total.value = data.length
     loading.value = false
-  }, 600)
+  }, 400)
 }
 
+// 重置
 const resetQuery = () => {
   query.jobName = ''
   query.userName = ''
@@ -189,16 +223,20 @@ const viewResume = (row) => {
   resumeVisible.value = true
 }
 
+// ✅ 录用
 const handlePass = async (row) => {
   await ElMessageBox.confirm('确定录用该求职者？', '提示', { type: 'warning' })
   row.status = 2
-  ElMessage.success('已设为录用')
+  ElMessage.success('录用成功')
+  getList()
 }
 
+// ✅ 拒绝
 const handleReject = async (row) => {
   await ElMessageBox.confirm('确定拒绝该求职者？', '提示', { type: 'warning' })
   row.status = 3
   ElMessage.success('已拒绝')
+  getList()
 }
 
 onMounted(() => {

@@ -26,3 +26,10 @@ Route::get('api/course/list', 'app\controller\CourseController@list');
 Route::get('api/forum/topic/list', 'app\controller\ForumTopicController@list');
 Route::post('api/forum/topic/save', 'app\controller\ForumTopicController@save');
 Route::post('api/forum/topic/delete', 'app\controller\ForumTopicController@delete');
+
+
+// 企业信息接口
+Route::get('CompanyController/all','CompanyController/all');
+Route::post('CompanyController/create','CompanyController/create');
+Route::post('CompanyController/update','CompanyController/update');
+Route::post('CompanyController/delete','CompanyController/delete');

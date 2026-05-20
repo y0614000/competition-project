@@ -3,7 +3,9 @@
     <div class="page-header">
       <h2>职位管理</h2>
       <el-button type="primary" @click="handleAdd">
-        <el-icon><Plus /></el-icon>
+        <el-icon>
+          <Plus />
+        </el-icon>
         新增职位
       </el-button>
     </div>
@@ -22,10 +24,14 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="getList">
-            <el-icon><Search /></el-icon> 查询
+            <el-icon>
+              <Search />
+            </el-icon> 查询
           </el-button>
           <el-button @click="resetSearch">
-            <el-icon><Refresh /></el-icon> 重置
+            <el-icon>
+              <Refresh />
+            </el-icon> 重置
           </el-button>
         </el-form-item>
       </el-form>
@@ -59,14 +65,8 @@
       </el-table>
 
       <div class="pagination-box">
-        <el-pagination
-          v-model:current-page="page"
-          v-model:page-size="limit"
-          :total="total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @current-change="getList"
-          @size-change="getList"
-        />
+        <el-pagination v-model:current-page="page" v-model:page-size="limit" :total="total"
+          layout="total, sizes, prev, pager, next, jumper" @current-change="getList" @size-change="getList" />
       </div>
     </div>
 
@@ -150,11 +150,13 @@ const form = reactive({
   status: 1
 })
 
-// 获取列表
+// ======================
+// 🔥 这里已经改成正确接口！
+// ======================
 const getList = async () => {
   loading.value = true
   try {
-    const res = await axios.get(baseURL + '/job/index', {
+    const res = await axios.get(baseURL + '/job/list', {
       params: {
         page: page.value,
         limit: limit.value,
@@ -232,35 +234,50 @@ onMounted(() => {
 
 <style scoped>
 .job-manage-container {
-  padding: 20px;
+  padding: 24px;
   background: #f5f7fa;
-  min-height: calc(100vh - 100px);
+  min-height: calc(100vh - 130px);
 }
+
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
 }
+
+.page-header h2 {
+  font-size: 22px;
+  color: #333;
+  margin: 0;
+}
+
 .search-box {
-  background: #fff;
-  padding: 16px 20px;
-  border-radius: 8px;
+  background: #ffffff;
+  padding: 20px 24px;
+  border-radius: 12px;
   margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
+
 .table-box {
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
+
 .pagination-box {
   margin-top: 20px;
   text-align: right;
 }
+
 :deep(.table-header) {
   background: #f8f9fc !important;
-  font-weight: 600;
+  font-weight: 600 !important;
+  color: #333 !important;
 }
+
 .dialog-footer {
   text-align: right;
 }

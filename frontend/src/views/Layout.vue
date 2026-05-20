@@ -201,11 +201,47 @@ const goRegister = () => {
     border-right: none;
 }
 
+/* ========== 🔥 侧边栏悬浮效果 核心代码 ========== */
+:deep(.el-menu-item) {
+    border-radius: 8px !important;
+    margin: 4px 10px !important;
+    transition: all 0.25s ease !important;
+}
+
+:deep(.el-menu-item:hover) {
+    background-color: #f0f7ff !important;
+    color: #409eff !important;
+    transform: translateX(4px) scale(1.03);
+    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.15);
+}
+
+:deep(.el-sub-menu__title) {
+    border-radius: 8px !important;
+    margin: 4px 10px !important;
+    transition: all 0.25s ease !important;
+}
+
+:deep(.el-sub-menu__title:hover) {
+    background-color: #f0f7ff !important;
+    color: #409eff !important;
+    transform: translateX(4px) scale(1.03);
+    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.15);
+}
+
+/* 激活状态更美观 */
+:deep(.el-menu-item.is-active) {
+    background-color: #e8f3ff !important;
+    color: #409eff !important;
+    font-weight: 500;
+    box-shadow: 0 2px 6px rgba(64, 158, 255, 0.12);
+}
+
 /* ========== 主体布局 ========== */
 .layout-main {
     flex: 1;
     margin-top: 65px;
-    padding-left: 220px; /* 给左侧悬浮菜单留出位置 */
+    padding-left: 220px;
+    /* 给左侧悬浮菜单留出位置 */
 }
 
 .layout-content {
