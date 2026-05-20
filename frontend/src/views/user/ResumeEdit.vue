@@ -242,11 +242,18 @@ const exportPDF = () => {
 }
 
 const completePercent = computed(() => {
+    let total = 17  // 总字段数不变
     let count = 0
-    Object.values(form).forEach(v => {
-        if (v && String(v).trim()) count++
+
+    Object.values(form).forEach(val => {
+        // 只有真正有内容，才算填写
+        if (val !== null && val !== undefined && String(val).trim() !== '') {
+            count++
+        }
     })
-    return Math.round((count / 17) * 100)
+
+    // 计算百分比，最小 0%
+    return Math.min(Math.round((count / total) * 100), 100)
 })
 
 onMounted(() => loadResume())

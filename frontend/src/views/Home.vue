@@ -226,9 +226,7 @@ const goTo = (path) => {
     opacity: 0.9;
 }
 
-/* ====================================== */
-/* ✅ 悬浮图标样式 100% 原样保留 */
-/* ====================================== */
+/*悬浮图标样式*/
 .service-container {
     max-width: 1200px;
     margin: -60px auto 20px;
@@ -416,15 +414,26 @@ const goTo = (path) => {
     gap: 10px;
 }
 
-.right-btn {
-    width: 100%;
+.right-buttons {
+    padding: 15px;
     display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+:deep(.right-btn) {
+    width: 100% !important;
+    min-height: 42px;
+    padding: 6px 12px !important;
+    margin: 0 !important;
+    box-sizing: border-box;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     text-align: center;
     border: 1px solid #0066b3;
     color: #0066b3;
     white-space: normal;
-    word-break: break-all;
+    line-height: 1.5;
 }
 </style>
