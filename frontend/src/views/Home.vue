@@ -155,7 +155,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import axios from '../utils/request'
 import { OfficeBuilding, House, Wallet, User, ChatDotRound, Star } from '@element-plus/icons-vue'
 
 const router = useRouter()

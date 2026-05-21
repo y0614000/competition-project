@@ -27,7 +27,6 @@ const routes = [
       { path: 'jobList', name: 'JobList', component: () => import('../views/job/JobList.vue') },
       { path: 'matchJob', name: 'MatchJob', component: () => import('../views/job/MatchJob.vue') },
       // 求职者
-      { path: 'userInfo', name: 'UserInfo', component: () => import('../views/user/UserInfo.vue') },
       { path: 'resumeEdit', name: 'ResumeEdit', component: () => import('../views/user/ResumeEdit.vue') },
       { path: 'myApply', name: 'MyApply', component: () => import('../views/user/MyApply.vue') },
       // 企业
@@ -39,8 +38,7 @@ const routes = [
       { path: 'newsList', name: 'NewsList', component: () => import('../views/info/NewsList.vue') },
       { path: 'courseList', name: 'CourseList', component: () => import('../views/info/CourseList.vue') },
       // 论坛
-      { path: 'topicList', name: 'TopicList', component: () => import('../views/forum/TopicList.vue') },
-      { path: 'addTopic', name: 'AddTopic', component: () => import('../views/forum/AddTopic.vue') }
+      { path: 'topicList', name: 'TopicList', component: () => import('../views/forum/TopicList.vue') }
     ]
   }
 ]

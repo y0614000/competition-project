@@ -62,7 +62,6 @@
                             </el-icon>
                             <span>求职者中心</span>
                         </template>
-                        <el-menu-item index="/userInfo">个人资料</el-menu-item>
                         <el-menu-item index="/resumeEdit">简历编辑</el-menu-item>
                         <el-menu-item index="/myApply">我的投递</el-menu-item>
                     </el-sub-menu>
@@ -99,7 +98,6 @@
                             <span>交流论坛</span>
                         </template>
                         <el-menu-item index="/topicList">帖子广场</el-menu-item>
-                        <el-menu-item index="/addTopic">发布帖子</el-menu-item>
                     </el-sub-menu>
                 </el-menu>
             </el-aside>

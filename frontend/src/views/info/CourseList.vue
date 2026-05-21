@@ -1,228 +1,266 @@
 <template>
-    <div class="page-container">
-        <!-- 顶部渐变标题栏 -->
-        <div class="page-top">
-            <div class="title-wrap">
-                <h2>人才培训课程</h2>
-                <p>技能提升、职业认证、自贸港专项精品培训课程</p>
+    <div class="course-page">
+        <!-- 顶部渐变标题区 -->
+        <div class="course-header">
+            <div class="header-box">
+                <h2>人才技能培训中心</h2>
+                <p>专业职业技能提升 | 行业认证培训 | 就业导向精品课程</p>
             </div>
         </div>
 
-        <!-- 课程卡片列表 -->
-        <el-row :gutter="24" class="course-wrap">
+        <!-- 课程分类快捷入口 -->
+        <div class="course-tab">
+            <el-button text class="tab-btn active">全部课程</el-button>
+            <el-button text class="tab-btn">免费课程</el-button>
+            <el-button text class="tab-btn">付费精品</el-button>
+            <el-button text class="tab-btn">最新上线</el-button>
+        </div>
+
+        <!-- 课程卡片 -->
+        <el-row :gutter="26" class="course-list">
             <el-col :span="8" v-for="item in courseList" :key="item.id">
                 <div class="course-card">
-                    <!-- 顶部标签 -->
-                    <div class="card-label" :class="item.price == 0 ? 'free-label' : 'pay-label'">
-                        {{ item.price == 0 ? '免费课程' : '精品付费' }}
+                    <!-- 标签 -->
+                    <div class="card-tag" :class="item.price == 0 ? 'free' : 'premium'">
+                        {{ item.price == 0 ? '免费学习' : '付费精品' }}
                     </div>
 
-                    <!-- 课程封面占位 -->
-                    <div class="course-cover">
-                        <img :src="item.course_img" alt="课程封面" />
+                    <!-- 课程封面 读取public/images/book/下图片 -->
+                    <div class="card-cover">
+                        <img :src="`/images/book/${item.course_img}`" alt="课程封面" class="cover-img" />
                     </div>
 
-                    <!-- 课程内容 -->
-                    <div class="course-content">
+                    <!-- 内容 -->
+                    <div class="card-body">
                         <h3 class="course-title">{{ item.course_name }}</h3>
-                        <p class="course-intro">{{ item.course_intro }}</p>
+                        <p class="course-desc">{{ item.course_intro }}</p>
 
-                        <div class="course-data">
-                            <div class="data-item">
-                                <i class="el-icon-user-solid"></i>
-                                <span>{{ item.study_num }}人已学习</span>
-                            </div>
-                            <div class="data-item">
-                                <i class="el-icon-time"></i>
-                                <span>{{ item.create_time }}</span>
-                            </div>
+                        <!-- 数据 -->
+                        <div class="course-info">
+                            <span><i class="el-icon-user"></i> {{ item.study_num }} 人学习</span>
+                            <span><i class="el-icon-time"></i> {{ item.create_time }}</span>
                         </div>
 
-                        <!-- 底部价格与按钮 -->
-                        <div class="course-footer">
-                            <div class="course-price">
-                                <span v-if="item.price == 0">免费学习</span>
-                                <span v-else class="money">¥{{ item.price }}</span>
+                        <!-- 底部报名按钮 -->
+                        <div class="card-footer">
+                            <div class="price">
+                                <span v-if="item.price == 0" class="free-text">免费学习</span>
+                                <span v-else class="pay-text">¥{{ item.price }}</span>
                             </div>
-                            <el-button type="primary" size="small" class="join-btn">立即报名</el-button>
+                            <el-button type="primary" size="small" round @click="joinCourse(item)">立即报名</el-button>
                         </div>
                     </div>
                 </div>
             </el-col>
         </el-row>
 
-        <!-- 空数据提示 -->
-        <el-empty v-if="courseList.length === 0" description="暂无上架培训课程" />
+        <!-- 空状态 -->
+        <el-empty v-if="courseList.length === 0" description="暂无课程" :image-size="120"
+            style="margin-top:40px"></el-empty>
     </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import axios from '../../utils/request'
+import { ElMessage } from 'element-plus'
 
 const courseList = ref([])
-const baseUrl = 'http://127.0.0.1:8000/api'
 
-// 获取课程数据
-const getCourseData = async () => {
-    const res = await axios.get(`${baseUrl}/course/list`)
-    courseList.value = res.data.data
+// 获取登录用户信息
+const getUserInfo = () => {
+    return JSON.parse(localStorage.getItem('userInfo') || '{}')
+}
+
+// 获取课程列表
+const getCourseList = async () => {
+    const res = await axios.get('/api/course/list')
+    if (res.data.code === 200) {
+        courseList.value = res.data.data
+    }
+}
+
+// 课程报名方法
+const joinCourse = async (course) => {
+    const user = getUserInfo()
+    if (!user.id) {
+        ElMessage.warning('请先登录账号再报名')
+        return
+    }
+    const res = await axios.post('/api/course/join', {
+        userId: user.id,
+        courseId: course.id
+    })
+    if (res.data.code === 200) {
+        ElMessage.success(res.data.msg)
+        // 报名成功本地人数+1
+        course.study_num = parseInt(course.study_num) + 1
+    } else {
+        ElMessage.warning(res.data.msg)
+    }
 }
 
 onMounted(() => {
-    getCourseData()
+    getCourseList()
 })
 </script>
 
 <style scoped>
 /* 页面整体 */
-.page-container {
+.course-page {
     padding: 30px;
-    background-color: #f7f9fc;
+    background: #f5f7fa;
     min-height: 100vh;
 }
 
-/* 顶部渐变标题区 */
-.page-top {
-    background: linear-gradient(135deg, #409eff 0%, #73c0fc 100%);
-    border-radius: 16px;
-    padding: 35px 40px;
-    margin-bottom: 30px;
-    box-shadow: 0 6px 18px rgba(64, 158, 255, 0.25);
+/* 顶部渐变标题 */
+.course-header {
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    border-radius: 20px;
+    padding: 40px;
+    margin-bottom: 25px;
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
 }
 
-.title-wrap h2 {
+.header-box h2 {
     font-size: 28px;
-    color: #ffffff;
+    color: #fff;
     margin: 0 0 10px;
     font-weight: 600;
-    letter-spacing: 1px;
 }
 
-.title-wrap p {
+.header-box p {
     font-size: 15px;
-    color: #e8f4ff;
+    color: rgba(255, 255, 255, 0.85);
     margin: 0;
-    opacity: 0.9;
 }
 
-/* 课程外层布局 */
-.course-wrap {
+/* 课程分类 */
+.course-tab {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 30px;
+}
+
+.tab-btn {
+    padding: 8px 18px;
+    border-radius: 30px;
+    font-size: 14px;
+}
+
+.tab-btn.active {
+    background: #eef4ff;
+    color: #3b82f6;
+    font-weight: 500;
+}
+
+/* 课程列表 */
+.course-list {
+    max-width: 1400px;
     margin: 0 auto;
 }
 
-/* 课程卡片主样式 */
+/* 课程卡片 */
 .course-card {
     background: #fff;
-    border-radius: 18px;
+    border-radius: 20px;
     overflow: hidden;
     position: relative;
-    margin-bottom: 28px;
-    transition: all 0.35s ease;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
 }
 
 .course-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 12px 30px rgba(64, 158, 255, 0.18);
+    transform: translateY(-10px);
+    box-shadow: 0 12px 32px rgba(59, 130, 246, 0.15);
 }
 
-/* 课程标签 */
-.card-label {
+/* 标签 */
+.card-tag {
     position: absolute;
-    top: 16px;
-    left: 16px;
+    top: 15px;
+    left: 15px;
     padding: 4px 12px;
     border-radius: 30px;
     font-size: 12px;
     color: #fff;
-    z-index: 2;
+    z-index: 10;
 }
 
-.free-label {
-    background: linear-gradient(90deg, #67c23a, #85e05c);
+.card-tag.free {
+    background: linear-gradient(90deg, #10b981, #34d399);
 }
 
-.pay-label {
-    background: linear-gradient(90deg, #e6a23c, #f7c466);
+.card-tag.premium {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
 }
 
-/* 课程封面 */
-.course-cover {
+/* 封面 */
+.card-cover {
     width: 100%;
-    height: 160px;
-    background-color: #f2f6fb;
+    height: 190px;
+    background: #f9fafb;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.course-cover img {
-    width: 80px;
-    opacity: 0.7;
+.cover-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
-/* 课程文字内容 */
-.course-content {
-    padding: 20px;
+/* 内容 */
+.card-body {
+    padding: 22px;
 }
 
 .course-title {
     font-size: 17px;
-    color: #2a3342;
-    margin: 0 0 12px;
     font-weight: 600;
-    line-height: 1.4;
+    color: #1f2937;
+    margin: 0 0 10px;
 }
 
-.course-intro {
+.course-desc {
     font-size: 13px;
-    color: #8892a0;
+    color: #6b7280;
     line-height: 1.6;
-    margin: 0 0 18px;
+    margin: 0 0 16px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
 
-/* 数据统计行 */
-.course-data {
+/* 信息 */
+.course-info {
     display: flex;
     justify-content: space-between;
     font-size: 12px;
-    color: #667486;
-    margin-bottom: 20px;
+    color: #9ca3af;
+    margin-bottom: 18px;
 }
 
-.data-item {
+/* 底部 */
+.card-footer {
     display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-/* 底部价格按钮 */
-.course-footer {
-    display: flex;
-    align-items: center;
     justify-content: space-between;
-    padding-top: 15px;
-    border-top: 1px solid #f0f3f8;
+    align-items: center;
+    padding-top: 16px;
+    border-top: 1px solid #f3f4f6;
 }
 
-.course-price span {
+.free-text {
     font-size: 15px;
+    color: #10b981;
     font-weight: 600;
-    color: #409eff;
 }
 
-.course-price .money {
-    color: #f56c6c;
+.pay-text {
     font-size: 18px;
-}
-
-.join-btn {
-    border-radius: 20px;
-    padding: 5px 16px !important;
+    color: #ef4444;
+    font-weight: bold;
 }
 </style>

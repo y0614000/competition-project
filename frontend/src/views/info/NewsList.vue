@@ -1,8 +1,8 @@
 <template>
     <div class="news-page">
-        <!-- 顶部标题外框区域 -->
-        <div class="title-wrap">
-            <div class="page-title">
+        <!-- 顶部渐变标题 -->
+        <div class="news-header">
+            <div class="header-content">
                 <h2>自贸港资讯中心</h2>
                 <p>汇聚海南最新人才政策、就业补贴、线下招聘活动、行业发展动态</p>
             </div>
@@ -69,11 +69,10 @@
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ArrowRight } from '@element-plus/icons-vue'
-import axios from 'axios'
+import axios from '../../utils/request'
 
 const newsList = ref([])
 const activeType = ref('')
-const baseURL = 'http://127.0.0.1:8000/api'
 
 // 筛选后列表
 const filterList = computed(() => {
@@ -87,8 +86,15 @@ const jobActCount = computed(() => newsList.value.filter(i => i.type === 2).leng
 
 // 获取资讯列表
 const getNewsList = async () => {
-    const res = await axios.get(baseURL + '/news/list')
-    newsList.value = res.data.data
+    try {
+        const res = await axios.get('/api/news/list')
+        if (res.data.code === 200) {
+            newsList.value = res.data.data
+        }
+    } catch (e) {
+        ElMessage.error('资讯加载失败')
+        console.error(e)
+    }
 }
 
 // 筛选资讯
@@ -97,10 +103,8 @@ const filterNews = (type) => {
 }
 
 // 查看详情
-const goDetail = async (item) => {
-    const res = await axios.get(baseURL + '/news/detail/' + item.id)
-    ElMessage.success('正在查看资讯详情')
-    console.log('资讯详情：', res.data.data)
+const goDetail = (item) => {
+    ElMessage.success('查看：' + item.title)
 }
 
 onMounted(() => {
@@ -115,42 +119,42 @@ onMounted(() => {
     min-height: 100vh;
 }
 
-/* 标题外框 */
-.title-wrap {
-    background: #fff;
-    border: 1px solid #e5eaf3;
-    border-radius: 14px;
-    padding: 22px 26px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+/* 顶部渐变标题 */
+.news-header {
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    border-radius: 16px;
+    padding: 32px 28px;
+    margin-bottom: 22px;
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.15);
 }
 
-.page-title h2 {
-    font-size: 24px;
-    color: #222;
-    margin: 0 0 6px;
+.header-content h2 {
+    font-size: 26px;
+    color: #fff;
+    margin: 0 0 8px;
+    font-weight: 600;
 }
 
-.page-title p {
-    color: #888;
+.header-content p {
+    color: rgba(255, 255, 255, 0.9);
     margin: 0;
-    font-size: 14px;
+    font-size: 15px;
 }
 
 /* 数据统计行 */
 .stat-row {
     display: flex;
     gap: 16px;
-    margin-bottom: 20px;
+    margin-bottom: 22px;
 }
 
 .stat-card {
     flex: 1;
     background: #fff;
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: 14px;
+    padding: 20px;
     text-align: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
 }
 
 .stat-card.blue {
@@ -164,9 +168,9 @@ onMounted(() => {
 }
 
 .stat-num {
-    font-size: 26px;
+    font-size: 28px;
     font-weight: bold;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
 }
 
 .stat-text {
@@ -177,20 +181,20 @@ onMounted(() => {
 .stat-card.blue .stat-text,
 .stat-card.green .stat-text {
     color: #fff;
-    opacity: 0.9;
+    opacity: 0.95;
 }
 
 /* 筛选栏 */
 .filter-bar {
     background: #fff;
-    padding: 14px 20px;
+    padding: 16px 20px;
     border-radius: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 22px;
     display: flex;
     gap: 12px;
 }
 
-/* 资讯列表样式升级 */
+/* 资讯列表 */
 .news-list {
     width: 100%;
 }
@@ -199,7 +203,7 @@ onMounted(() => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 24px;
+    padding: 22px 24px;
     background: #fff;
     border-radius: 12px;
     margin-bottom: 14px;
@@ -223,7 +227,7 @@ onMounted(() => {
 
 .news-tag {
     flex-shrink: 0;
-    padding: 4px 10px;
+    padding: 5px 11px;
     background: #ecf5ff;
     color: #409eff;
     border-radius: 6px;

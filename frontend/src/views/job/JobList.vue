@@ -203,9 +203,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { OfficeBuilding, Tools, LocationFilled } from '@element-plus/icons-vue'
-import axios from 'axios'
-
-const baseURL = 'http://127.0.0.1:8000/api'
+import axios from '../../utils/request'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -241,7 +239,7 @@ const cityCount = computed(() => {
 const getJobList = async () => {
     loading.value = true
     try {
-        const res = await axios.get(`${baseURL}/job/list`, {
+        const res = await axios.get('/api/job/list', {
             params: {
                 page: page.value,
                 limit: limit.value,
@@ -287,7 +285,7 @@ const openEditDialog = (item) => {
 // 状态切换
 const handleSwitchStatus = async (item) => {
     try {
-        const res = await axios.post(`${baseURL}/job/switchStatus`, {
+        const res = await axios.post('/api/job/switchStatus', {
             id: item.id,
             status: item.status ? 0 : 1
         })
@@ -300,14 +298,35 @@ const handleSwitchStatus = async (item) => {
 
 // 删除
 const handleDelete = async (id) => {
-    await ElMessageBox.confirm('确认删除该职位？', '提示', { type: 'warning' })
-    try {
-        const res = await axios.post(`${baseURL}/job/delete/${id}`)
-        if (res.data.code === 200) {
-            ElMessage.success('删除成功')
-            getJobList()
-        }
-    } catch (e) { ElMessage.error('删除失败') }
+  if (!id) {
+    ElMessage.error('ID不能为空')
+    return
+  }
+
+  try {
+    await ElMessageBox.confirm('确认删除该职位？', '提示', {
+      type: 'warning'
+    })
+  } catch {
+    return
+  }
+
+  try {
+    // 重点：后端是 post 参数 id，不是 url 拼接！
+    const res = await axios.post('/api/job/delete', {
+      id: id
+    })
+
+    if (res.data.code === 200) {
+      ElMessage.success('删除成功')
+      getJobList()
+    } else {
+      ElMessage.error(res.data.msg || '删除失败')
+    }
+  } catch (e) {
+    console.error(e)
+    ElMessage.error('删除请求异常')
+  }
 }
 
 // 提交
@@ -315,7 +334,7 @@ const submitForm = async () => {
     if (!formData.job_name || !formData.salary) return ElMessage.warning('请完善必填项')
     submitLoading.value = true
     try {
-        const res = await axios.post(`${baseURL}/job/save`, formData)
+        const res = await axios.post('/api/job/save', formData)
         if (res.data.code === 200) {
             ElMessage.success('保存成功')
             dialogVisible.value = false
