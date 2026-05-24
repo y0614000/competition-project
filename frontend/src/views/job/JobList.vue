@@ -1,60 +1,26 @@
 <template>
-    <div class="job-manage-page">
+    <div class="job-user-page">
         <!-- 顶部标题栏 -->
         <div class="page-header-card">
             <div class="header-left">
                 <el-icon class="header-icon">
-                    <OfficeBuilding />
+                    <Briefcase />
                 </el-icon>
                 <div>
-                    <h2>企业职位管理</h2>
-                    <p>发布、管理、编辑招聘岗位，统筹岗位招聘状态</p>
+                    <h2>职位中心</h2>
+                    <p>浏览全岛优质岗位，一键投递求职</p>
                 </div>
             </div>
-            <el-button type="primary" icon="Plus" @click="openAddDialog">
-                新增招聘职位
-            </el-button>
-        </div>
-
-        <!-- 数据统计面板 -->
-        <div class="stat-panel">
-            <el-row :gutter="20">
-                <el-col :span="6">
-                    <div class="stat-item blue">
-                        <div class="stat-number">{{ total }}</div>
-                        <div class="stat-label">总发布职位</div>
-                    </div>
-                </el-col>
-                <el-col :span="6">
-                    <div class="stat-item green">
-                        <div class="stat-number">{{jobList.filter(i => i.status).length}}</div>
-                        <div class="stat-label">正在招聘</div>
-                    </div>
-                </el-col>
-                <el-col :span="6">
-                    <div class="stat-item orange">
-                        <div class="stat-number">{{jobList.filter(i => !i.status).length}}</div>
-                        <div class="stat-label">已暂停</div>
-                    </div>
-                </el-col>
-                <el-col :span="6">
-                    <div class="stat-item purple">
-                        <div class="stat-number">{{ cityCount }}</div>
-                        <div class="stat-label">覆盖城市</div>
-                    </div>
-                </el-col>
-            </el-row>
         </div>
 
         <!-- 筛选区 -->
         <div class="filter-card">
             <div class="filter-left">
-                <el-input v-model="searchKey" placeholder="搜索职位名称/地点/技能" style="width: 280px" clearable
+                <el-input v-model="searchKey" placeholder="搜索职位名称/地点/薪资" style="width: 280px" clearable
                     @keyup.enter="getJobList" />
                 <el-select v-model="statusFilter" placeholder="招聘状态" style="width: 150px" @change="getJobList">
                     <el-option label="全部" value="" />
                     <el-option label="招聘中" value="1" />
-                    <el-option label="已暂停" value="0" />
                 </el-select>
                 <el-select v-model="eduFilter" placeholder="学历要求" style="width: 130px" @change="getJobList">
                     <el-option label="全部学历" value="" />
@@ -83,16 +49,14 @@
                             <el-icon>
                                 <OfficeBuilding />
                             </el-icon>
-                            企业ID：{{ item.company_id }}
+                            企业编号：{{ item.company_id }}
                         </div>
 
                         <div class="tag-group">
                             <el-tag size="small" icon="LocationFilled">{{ item.city }}</el-tag>
                             <el-tag size="small" type="success">{{ item.edu }}</el-tag>
                             <el-tag size="small" type="warning">{{ item.exp }}</el-tag>
-                            <el-tag size="small" :type="item.status ? 'success' : 'danger'">
-                                {{ item.status ? '招聘中' : '已暂停' }}
-                            </el-tag>
+                            <el-tag size="small" type="success">招聘中</el-tag>
                         </div>
 
                         <div class="skill-info">
@@ -107,12 +71,10 @@
                         </div>
 
                         <div class="card-footer">
-                            <el-button type="primary" size="small" @click="openEditDialog(item)">编辑</el-button>
-                            <el-button :type="item.status ? 'warning' : 'success'" size="small"
-                                @click="handleSwitchStatus(item)">
-                                {{ item.status ? '暂停' : '启用' }}
+                            <el-button type="primary" size="small" @click="toApply(item.id)">
+                                立即投递
                             </el-button>
-                            <el-button type="danger" size="small" @click="handleDelete(item.id)">删除</el-button>
+                            <el-button size="small" @click="openDetail(item)">查看详情</el-button>
                         </div>
                     </el-card>
                 </el-col>
@@ -127,113 +89,47 @@
                 layout="total, sizes, prev, pager, next, jumper" background @current-change="getJobList" />
         </div>
 
-        <!-- 弹窗 -->
-        <el-dialog v-model="dialogVisible" title="职位信息" width="700px" center>
-            <el-form :model="formData" label-width="100px" label-position="top">
-                <el-row :gutter="20">
-                    <el-col :span="12">
-                        <el-form-item label="企业ID">
-                            <el-input v-model="formData.company_id" placeholder="请输入企业ID" />
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="职位名称">
-                            <el-input v-model="formData.job_name" placeholder="请输入职位名称" />
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="薪资范围">
-                            <el-input v-model="formData.salary" placeholder="如：6000-10000" />
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="工作地点">
-                            <el-input v-model="formData.city" placeholder="海口/三亚等" />
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="学历要求">
-                            <el-select v-model="formData.edu">
-                                <el-option label="不限" value="不限" />
-                                <el-option label="大专" value="大专" />
-                                <el-option label="本科" value="本科" />
-                                <el-option label="硕士" value="硕士" />
-                            </el-select>
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="经验要求">
-                            <el-select v-model="formData.exp">
-                                <el-option label="不限" value="不限" />
-                                <el-option label="1年以上" value="1年以上" />
-                                <el-option label="1-3年" value="1-3年" />
-                                <el-option label="3-5年" value="3-5年" />
-                            </el-select>
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="24">
-                        <el-form-item label="技能要求">
-                            <el-input v-model="formData.skill" type="textarea" rows="2" placeholder="Java/MySQL/前端等" />
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="24">
-                        <el-form-item label="职位描述">
-                            <el-input v-model="formData.content" type="textarea" rows="4" />
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="24">
-                        <el-form-item label="招聘状态">
-                            <el-radio-group v-model="formData.status">
-                                <el-radio :label="1">正常招聘</el-radio>
-                                <el-radio :label="0">暂停招聘</el-radio>
-                            </el-radio-group>
-                        </el-form-item>
-                    </el-col>
-                </el-row>
-            </el-form>
+        <!-- 详情弹窗 -->
+        <el-dialog v-model="detailVisible" title="职位详情" width="650px" center>
+            <div class="detail-box">
+                <h3>{{ detailInfo.job_name }}</h3>
+                <div class="detail-salary">{{ detailInfo.salary }}</div>
+                <div class="detail-tags">
+                    <el-tag size="small">{{ detailInfo.city }}</el-tag>
+                    <el-tag size="small">{{ detailInfo.edu }}</el-tag>
+                    <el-tag size="small">{{ detailInfo.exp }}</el-tag>
+                </div>
+                <el-divider>职位描述</el-divider>
+                <div class="detail-content">{{ detailInfo.content || '暂无描述' }}</div>
+                <el-divider>技能要求</el-divider>
+                <div class="detail-skill">{{ detailInfo.skill || '无' }}</div>
+            </div>
             <template #footer>
-                <el-button @click="dialogVisible = false">取消</el-button>
-                <el-button type="primary" @click="submitForm" :loading="submitLoading">保存提交</el-button>
+                <el-button @click="detailVisible = false">关闭</el-button>
+                <el-button type="primary" @click="toApply(detailInfo.id)">立即投递简历</el-button>
             </template>
         </el-dialog>
     </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { OfficeBuilding, Tools, LocationFilled } from '@element-plus/icons-vue'
+import { ref, reactive, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import { Briefcase, OfficeBuilding, Tools, LocationFilled } from '@element-plus/icons-vue'
 import axios from '../../utils/request'
 
 const loading = ref(false)
-const submitLoading = ref(false)
 const searchKey = ref('')
-const statusFilter = ref('')
+const statusFilter = ref('1') // 只看招聘中
 const eduFilter = ref('')
-const dialogVisible = ref(false)
 const page = ref(1)
 const limit = ref(12)
 const total = ref(0)
 const jobList = ref([])
 
-const formData = reactive({
-    id: '',
-    company_id: '',
-    job_name: '',
-    salary: '',
-    city: '',
-    edu: '大专',
-    exp: '不限',
-    skill: '',
-    content: '',
-    status: 1
-})
-
-// 统计城市数量
-const cityCount = computed(() => {
-    let arr = jobList.value.map(i => i.city)
-    return new Set(arr).size
-})
+// 详情
+const detailVisible = ref(false)
+const detailInfo = reactive({})
 
 // 获取职位
 const getJobList = async () => {
@@ -253,7 +149,7 @@ const getJobList = async () => {
             total.value = res.data.data.total
         }
     } catch (err) {
-        ElMessage.error('获取失败')
+        ElMessage.error('获取职位失败')
     } finally {
         loading.value = false
     }
@@ -262,88 +158,29 @@ const getJobList = async () => {
 // 重置筛选
 const resetFilter = () => {
     searchKey.value = ''
-    statusFilter.value = ''
+    statusFilter.value = '1'
     eduFilter.value = ''
     getJobList()
 }
 
-// 新增
-const openAddDialog = () => {
-    dialogVisible.value = true
-    Object.assign(formData, {
-        id: '', company_id: '', job_name: '', salary: '', city: '',
-        edu: '大专', exp: '不限', skill: '', content: '', status: 1
-    })
+// 查看详情
+const openDetail = (item) => {
+    Object.assign(detailInfo, item)
+    detailVisible.value = true
 }
 
-// 编辑
-const openEditDialog = (item) => {
-    dialogVisible.value = true
-    Object.assign(formData, item)
-}
-
-// 状态切换
-const handleSwitchStatus = async (item) => {
+// 投递简历
+const toApply = async (id) => {
+    if (!id) return ElMessage.warning('职位ID错误')
     try {
-        const res = await axios.post('/api/job/switchStatus', {
-            id: item.id,
-            status: item.status ? 0 : 1
-        })
+        const res = await axios.post('/api/apply/add', { job_id: id })
         if (res.data.code === 200) {
-            ElMessage.success('状态已更新')
-            getJobList()
-        }
-    } catch (e) { ElMessage.error('操作失败') }
-}
-
-// 删除
-const handleDelete = async (id) => {
-  if (!id) {
-    ElMessage.error('ID不能为空')
-    return
-  }
-
-  try {
-    await ElMessageBox.confirm('确认删除该职位？', '提示', {
-      type: 'warning'
-    })
-  } catch {
-    return
-  }
-
-  try {
-    // 重点：后端是 post 参数 id，不是 url 拼接！
-    const res = await axios.post('/api/job/delete', {
-      id: id
-    })
-
-    if (res.data.code === 200) {
-      ElMessage.success('删除成功')
-      getJobList()
-    } else {
-      ElMessage.error(res.data.msg || '删除失败')
-    }
-  } catch (e) {
-    console.error(e)
-    ElMessage.error('删除请求异常')
-  }
-}
-
-// 提交
-const submitForm = async () => {
-    if (!formData.job_name || !formData.salary) return ElMessage.warning('请完善必填项')
-    submitLoading.value = true
-    try {
-        const res = await axios.post('/api/job/save', formData)
-        if (res.data.code === 200) {
-            ElMessage.success('保存成功')
-            dialogVisible.value = false
-            getJobList()
+            ElMessage.success('投递成功！')
+        } else {
+            ElMessage.error(res.data.msg || '投递失败')
         }
     } catch (e) {
-        ElMessage.error('保存失败')
-    } finally {
-        submitLoading.value = false
+        ElMessage.error('请先完善简历')
     }
 }
 
@@ -353,23 +190,23 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.job-manage-page {
+.job-user-page {
     padding: 24px;
-    background: #f5f7fa;
+    background: #f7f8fa;
     min-height: 100vh;
 }
 
-/* 顶部标题卡片 */
+/* 顶部标题 */
 .page-header-card {
-    background: linear-gradient(135deg, #0066b3, #409eff);
+    background: linear-gradient(135deg, #409eff, #69b1ff);
     padding: 20px 24px;
-    border-radius: 12px;
-    color: white;
+    border-radius: 14px;
+    color: #fff;
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    box-shadow: 0 4px 12px rgba(0, 102, 179, 0.15);
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.15);
 }
 
 .header-left {
@@ -379,7 +216,7 @@ onMounted(() => {
 }
 
 .header-icon {
-    font-size: 28px;
+    font-size: 26px;
 }
 
 .header-left h2 {
@@ -389,59 +226,20 @@ onMounted(() => {
 
 .header-left p {
     margin: 4px 0 0;
-    opacity: 0.9;
+    opacity: 0.92;
     font-size: 14px;
 }
 
-/* 统计面板 */
-.stat-panel {
-    margin-bottom: 20px;
-}
-
-.stat-item {
-    padding: 20px;
-    border-radius: 12px;
-    color: white;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-}
-
-.stat-number {
-    font-size: 26px;
-    font-weight: bold;
-    margin-bottom: 6px;
-}
-
-.stat-label {
-    font-size: 14px;
-    opacity: 0.9;
-}
-
-.stat-item.blue {
-    background: linear-gradient(135deg, #409eff, #69b1ff);
-}
-
-.stat-item.green {
-    background: linear-gradient(135deg, #67c23a, #95d475);
-}
-
-.stat-item.orange {
-    background: linear-gradient(135deg, #e6a23c, #eebe77);
-}
-
-.stat-item.purple {
-    background: linear-gradient(135deg, #9062f0, #b392f5);
-}
-
-/* 筛选栏 */
+/* 筛选 */
 .filter-card {
-    background: white;
+    background: #fff;
     padding: 16px 20px;
-    border-radius: 10px;
+    border-radius: 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .filter-left {
@@ -456,14 +254,14 @@ onMounted(() => {
 }
 
 .job-card {
-    border-radius: 12px;
+    border-radius: 14px;
     overflow: hidden;
-    transition: all 0.3s;
+    transition: all 0.28s ease;
 }
 
 .job-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 102, 179, 0.12);
+    box-shadow: 0 8px 20px rgba(64, 158, 255, 0.1);
 }
 
 .card-top {
@@ -531,5 +329,35 @@ onMounted(() => {
     display: flex;
     justify-content: center;
     padding: 10px 0;
+}
+
+/* 详情样式 */
+.detail-box {
+    padding: 10px;
+}
+
+.detail-box h3 {
+    font-size: 18px;
+    margin: 0 0 8px 0;
+}
+
+.detail-salary {
+    font-size: 17px;
+    color: #f56c6c;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.detail-tags {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.detail-content,
+.detail-skill {
+    line-height: 1.7;
+    color: #333;
+    padding: 4px 0;
 }
 </style>

@@ -29,7 +29,6 @@ const routes = [
       { path: 'resumeEdit', name: 'ResumeEdit', component: () => import('../views/user/ResumeEdit.vue') }, // 简历管理
       { path: 'myApply', name: 'MyApply', component: () => import('../views/user/MyApply.vue') }, // 我的投递
       { path: 'companyInfo', name: 'CompanyInfo', component: () => import('../views/company/CompanyInfo.vue') }, // 企业信息
-      { path: 'publishJob', name: 'PublishJob', component: () => import('../views/company/PublishJob.vue') }, // 发布职位
       { path: 'jobManage', name: 'JobManage', component: () => import('../views/company/JobManage.vue') }, // 职位管理
       { path: 'applyManage', name: 'ApplyManage', component: () => import('../views/company/ApplyManage.vue') }, // 简历投递管理
 

@@ -64,7 +64,6 @@
                         <!-- 企业看到的菜单 -->
                         <template v-if="role === 'company'">
                             <el-menu-item index="/companyInfo">企业信息</el-menu-item>
-                            <el-menu-item index="/publishJob">发布职位</el-menu-item>
                             <el-menu-item index="/jobManage">职位管理</el-menu-item>
                             <el-menu-item index="/applyManage">简历投递管理</el-menu-item>
                         </template>

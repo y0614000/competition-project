@@ -1,7 +1,16 @@
 <template>
   <div class="job-manage-container">
-    <div class="page-header">
-      <h2>职位管理</h2>
+    <!-- 顶部标题 -->
+    <div class="page-header-card">
+      <div class="header-left">
+        <el-icon class="header-icon">
+          <Briefcase />
+        </el-icon>
+        <div>
+          <h2>职位管理</h2>
+          <p>管理所有招聘职位，开启/停止招聘，编辑岗位信息</p>
+        </div>
+      </div>
       <el-button type="primary" @click="handleAdd">
         <el-icon>
           <Plus />
@@ -10,6 +19,7 @@
       </el-button>
     </div>
 
+    <!-- 搜索 -->
     <div class="search-box">
       <el-form :inline="true" :model="searchForm">
         <el-form-item label="职位名称">
@@ -37,6 +47,7 @@
       </el-form>
     </div>
 
+    <!-- 表格 -->
     <div class="table-box">
       <el-table :data="tableData" border stripe v-loading="loading" header-cell-class-name="table-header">
         <el-table-column label="序号" type="index" width="70" align="center" />
@@ -70,8 +81,9 @@
       </div>
     </div>
 
-    <el-dialog v-model="dialogVisible" title="职位信息" width="650px" destroy-on-close>
-      <el-form :model="form" label-width="100px">
+    <!-- 弹窗 -->
+    <el-dialog v-model="dialogVisible" title="职位信息编辑" width="650px" destroy-on-close>
+      <el-form :model="form" label-width="100px" label-position="right">
         <el-form-item label="职位名称">
           <el-input v-model="form.job_name" placeholder="请输入" />
         </el-form-item>
@@ -90,13 +102,13 @@
         </el-form-item>
         <el-form-item label="经验要求">
           <el-select v-model="form.exp">
-            <el-option label="不限" value="不限" />
+            <el-option label="应届生" value="应届生" />
             <el-option label="1-3年" value="1-3年" />
             <el-option label="3-5年" value="3-5年" />
           </el-select>
         </el-form-item>
         <el-form-item label="职位描述">
-          <el-input v-model="form.content" type="textarea" rows="4" />
+          <el-input v-model="form.content" type="textarea" rows="4" placeholder="岗位职责、任职要求" />
         </el-form-item>
         <el-form-item label="招聘状态">
           <el-radio-group v-model="form.status">
@@ -118,7 +130,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, Refresh } from '@element-plus/icons-vue'
+import { Plus, Search, Refresh, Briefcase } from '@element-plus/icons-vue'
 import axios from 'axios'
 
 const baseURL = 'http://127.0.0.1:8000/api'
@@ -150,9 +162,7 @@ const form = reactive({
   status: 1
 })
 
-// ======================
-// 🔥 这里已经改成正确接口！
-// ======================
+// 获取列表
 const getList = async () => {
   loading.value = true
   try {
@@ -207,7 +217,7 @@ const toggleStatus = async (row) => {
 
 // 删除
 const handleDelete = async (id) => {
-  await ElMessageBox.confirm('确定删除？')
+  await ElMessageBox.confirm('确定删除该职位？')
   await axios.post(baseURL + '/job/delete', { id })
   ElMessage.success('删除成功')
   getList()
@@ -235,21 +245,31 @@ onMounted(() => {
 <style scoped>
 .job-manage-container {
   padding: 24px;
-  background: #f5f7fa;
-  min-height: calc(100vh - 130px);
+  background: #f7f9fc;
+  min-height: 100vh;
 }
 
-.page-header {
+/* 顶部 == 企业端统一蓝色 */
+.page-header-card {
+  background: linear-gradient(135deg, #409eff, #58a9ff);
+  padding: 24px 28px;
+  border-radius: 16px;
+  color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.15);
 }
 
-.page-header h2 {
-  font-size: 22px;
-  color: #333;
-  margin: 0;
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.header-icon {
+  font-size: 26px;
 }
 
 .search-box {

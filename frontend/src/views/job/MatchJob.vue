@@ -106,8 +106,8 @@
                         </div>
 
                         <div class="card-footer">
-                            <el-button type="primary" size="small">立即投递</el-button>
-                            <el-button size="small">查看详情</el-button>
+                            <el-button type="primary" size="small" @click="toApply(item.id)">立即投递</el-button>
+                            <el-button size="small" @click="openDetail(item)">查看详情</el-button>
                         </div>
                     </el-card>
                 </el-col>
@@ -115,7 +115,26 @@
         </div>
 
         <!-- 空状态 -->
-        <el-empty v-if="matchJobList.length === 0" description="暂无匹配岗位，请调整意向标签后重新匹配" style="padding: 60px 0" />
+        <el-empty v-else description="暂无匹配岗位，请调整意向标签后重新匹配" style="padding: 60px 0" />
+
+        <!-- 详情弹窗 -->
+        <el-dialog v-model="detailVisible" title="职位详情" width="650px" center>
+            <div class="detail-box">
+                <h3>{{ detailInfo.jobName }}</h3>
+                <div class="detail-salary">{{ detailInfo.salary }}</div>
+                <div class="detail-tags">
+                    <el-tag size="small">{{ detailInfo.city }}</el-tag>
+                    <el-tag size="small">{{ detailInfo.jobType }}</el-tag>
+                    <el-tag size="small">{{ detailInfo.needExp }}</el-tag>
+                </div>
+                <el-divider>职位描述</el-divider>
+                <div class="detail-content">{{ detailInfo.jobDesc || '暂无描述' }}</div>
+            </div>
+            <template #footer>
+                <el-button @click="detailVisible = false">关闭</el-button>
+                <el-button type="primary" @click="toApply(detailInfo.id)">立即投递简历</el-button>
+            </template>
+        </el-dialog>
     </div>
 </template>
 
@@ -129,6 +148,8 @@ const inputTag = ref('')
 const userTag = ref(['Vue开发', '前端', '海口', '应届生'])
 const matchJobList = ref([])
 const loading = ref(false)
+const detailVisible = ref(false)
+const detailInfo = ref({})
 
 // 删除标签
 const delTag = (index) => {
@@ -169,7 +190,7 @@ const getUserId = () => {
     return JSON.parse(user).id
 }
 
-// 获取匹配列表
+// 获取匹配列表（你原来的接口！！！）
 const getMatchList = async () => {
     const user_id = getUserId()
     if (!user_id) {
@@ -188,7 +209,7 @@ const getMatchList = async () => {
     }
 }
 
-// 重新匹配
+// 重新匹配（你原来的接口！！！）
 const refreshMatch = async () => {
     const user_id = getUserId()
     if (!user_id) {
@@ -214,6 +235,25 @@ const refreshMatch = async () => {
     }
 }
 
+// 查看详情
+const openDetail = (item) => {
+    detailInfo.value = item
+    detailVisible.value = true
+}
+
+// 投递简历
+const toApply = async (id) => {
+    if (!id) return ElMessage.warning('职位ID错误')
+    try {
+        const res = await axios.post('/api/apply/add', { job_id: id })
+        if (res.data.code === 200) {
+            ElMessage.success('投递成功！')
+        }
+    } catch (e) {
+        ElMessage.warning('请先完善简历')
+    }
+}
+
 onMounted(() => {
     getMatchList()
 })
@@ -228,7 +268,7 @@ onMounted(() => {
 
 /* 顶部标题卡片（和首页统一） */
 .page-header-card {
-    background: linear-gradient(135deg, #0066b3, #409eff);
+    background: linear-gradient(135deg, #409eff, #69b1ff);
     padding: 20px 24px;
     border-radius: 12px;
     color: white;
@@ -356,7 +396,7 @@ onMounted(() => {
     font-size: 15px;
 }
 
-/* 匹配进度条（拿奖亮点） */
+/* 匹配进度条 */
 .match-bar {
     display: flex;
     align-items: center;
@@ -446,5 +486,33 @@ onMounted(() => {
     display: flex;
     gap: 8px;
     justify-content: flex-end;
+}
+
+.detail-box {
+    padding: 10px;
+}
+
+.detail-box h3 {
+    font-size: 18px;
+    margin: 0 0 8px 0;
+}
+
+.detail-salary {
+    font-size: 17px;
+    color: #f56c6c;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.detail-tags {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.detail-content {
+    line-height: 1.7;
+    color: #333;
+    padding: 4px 0;
 }
 </style>
