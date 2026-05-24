@@ -2,7 +2,7 @@
 
 namespace app\controller;
 
-use app\model\User as UserModel; 
+use app\model\User as UserModel;
 use think\Request;
 
 class User
@@ -13,6 +13,7 @@ class User
         $username = $request->post('username');
         $password = $request->post('password');
         $repass   = $request->post('repass');
+        $role     = $request->post('role', 'user'); // 接收角色
 
         if (!$username || !$password || !$repass) {
             return json(['code' => 0, 'msg' => '请填写完整信息']);
@@ -36,6 +37,7 @@ class User
         $user->avatar = null;
         $user->sex = 0;
         $user->status = 1;
+        $user->role = $role; // 保存角色
         $user->save();
 
         return json(['code' => 1, 'msg' => '注册成功']);
@@ -46,15 +48,21 @@ class User
     {
         $username = $request->post('username');
         $password = $request->post('password');
+        $role     = $request->post('role'); // 接收登录身份
 
-        if (!$username || !$password) {
-            return json(['code' => 0, 'msg' => '请输入账号密码']);
+        if (!$username || !$password || !$role) {
+            return json(['code' => 0, 'msg' => '请输入账号密码并选择身份']);
         }
 
         $user = UserModel::where('username', $username)->find();
 
         if (!$user) {
             return json(['code' => 0, 'msg' => '账号不存在']);
+        }
+
+        // 校验角色是否匹配
+        if ($user->role != $role) {
+            return json(['code' => 0, 'msg' => '身份选择错误']);
         }
 
         if ($user->status == 0) {
@@ -65,13 +73,22 @@ class User
             return json(['code' => 0, 'msg' => '密码错误']);
         }
 
+        // 登录成功 存入session
+        session('userInfo', [
+            'id' => $user->id,
+            'username' => $user->username,
+            'nickname' => $user->nickname,
+            'role' => $user->role
+        ]);
+
         return json([
             'code' => 1,
             'msg' => '登录成功',
             'data' => [
                 'id' => $user->id,
                 'username' => $user->username,
-                'nickname' => $user->nickname
+                'nickname' => $user->nickname,
+                'role' => $user->role // 返回角色给前端
             ]
         ]);
     }

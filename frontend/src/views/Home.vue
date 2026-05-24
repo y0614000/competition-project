@@ -1,6 +1,6 @@
 <template>
     <div class="home-page">
-        <!-- 🔴 轮播图：完全不动 -->
+        <!-- 轮播图 -->
         <el-carousel height="280px" indicator-position="bottom" arrow="hover">
             <el-carousel-item>
                 <div class="carousel-item bg1">
@@ -22,9 +22,7 @@
             </el-carousel-item>
         </el-carousel>
 
-        <!-- ====================================== -->
-        <!-- ✅ 你要的悬浮图标服务入口 原样加回来 -->
-        <!-- ====================================== -->
+        <!-- 悬浮图标服务入口 -->
         <div class="service-container">
             <el-row :gutter="20">
                 <el-col :span="4" v-for="item in serviceList" :key="item.name">
@@ -38,7 +36,7 @@
             </el-row>
         </div>
 
-        <!-- 🔵 你要的官网三栏布局 完整保留 -->
+        <!-- 三栏布局 -->
         <div class="main-container">
             <el-row :gutter="20">
                 <!-- 左侧：平台简介 + 快捷入口 -->
@@ -48,11 +46,18 @@
                             <h3>平台简介</h3>
                             <el-button type="text" class="more-btn">更多>></el-button>
                         </div>
+
+                        <!-- 这里我修好了！只保留一层 -->
                         <div class="panel-content intro-box">
                             <div class="intro-logo">
+                                <!-- 完美尺寸LOGO -->
                                 <svg width="60" height="60" viewBox="0 0 100 100">
-                                    <circle cx="50" cy="50" r="48" fill="#fff" stroke="#0066b3" stroke-width="2" />
-                                    <text x="50" y="55" text-anchor="middle" fill="#0066b3" font-size="12">LOGO</text>
+                                    <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#0066b3" stroke-width="2" />
+                                    <path d="M20 50 Q35 35 50 50 T80 50" stroke="#0066b3" stroke-width="3"
+                                        fill="none" />
+                                    <circle cx="50" cy="35" r="8" fill="#0066b3" />
+                                    <path d="M50 43 L50 70 M35 55 L65 55" stroke="#0066b3" stroke-width="4"
+                                        stroke-linecap="round" />
                                 </svg>
                             </div>
                             <p>海南自贸港人才服务中心成立于1998年12月，是为人才提供就业、创业、落户、补贴等一站式服务的平台，助力自贸港人才引进与发展。</p>
@@ -91,7 +96,7 @@
                             <div v-for="item in newsList" :key="item.id" class="news-item">
                                 <span class="dot">•</span>
                                 <span class="title">{{ item.title }}</span>
-                                <span class="date">{{ item.create_time }}</span>
+                                <span class="date">{{ formatTime(item.create_time) }}</span>
                             </div>
                         </div>
                     </div>
@@ -173,6 +178,21 @@ const serviceList = ref([
     { name: '社区论坛', icon: ChatDotRound, path: '/forum/topic-list' },
 ])
 
+// 时间格式化
+const formatTime = (timestamp) => {
+    if (!timestamp) return ''
+    let time = Number(timestamp)
+    if (time.toString().length === 10) time = time * 1000
+    const date = new Date(time)
+    const y = date.getFullYear()
+    const m = (date.getMonth() + 1).toString().padStart(2, '0')
+    const d = date.getDate().toString().padStart(2, '0')
+    const hh = date.getHours().toString().padStart(2, '0')
+    const mm = date.getMinutes().toString().padStart(2, '0')
+    const ss = date.getSeconds().toString().padStart(2, '0')
+    return `${y}-${m}-${d} ${hh}:${mm}:${ss}`
+}
+
 onMounted(() => {
     axios.get('/api/home').then(res => {
         jobList.value = res.data.job
@@ -187,7 +207,6 @@ const goTo = (path) => {
 </script>
 
 <style scoped>
-/* 轮播样式不变 */
 .home-page {
     width: 100%;
     background: #f5f7fa;
@@ -226,7 +245,6 @@ const goTo = (path) => {
     opacity: 0.9;
 }
 
-/*悬浮图标样式*/
 .service-container {
     max-width: 1200px;
     margin: -60px auto 20px;
@@ -258,7 +276,6 @@ const goTo = (path) => {
     color: #333;
 }
 
-/* 三栏布局样式不变 */
 .main-container {
     max-width: 1200px;
     margin: 20px auto;
@@ -306,10 +323,16 @@ const goTo = (path) => {
     padding: 15px;
     display: flex;
     gap: 15px;
+    align-items: center;
 }
 
 .intro-logo {
     flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .intro-box p {
@@ -405,13 +428,6 @@ const goTo = (path) => {
     margin-left: auto;
     color: #999;
     font-size: 12px;
-}
-
-.right-buttons {
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
 }
 
 .right-buttons {

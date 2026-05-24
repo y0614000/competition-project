@@ -44,6 +44,7 @@
                         <span>系统首页</span>
                     </el-menu-item>
 
+                    <!-- 职位中心 -->
                     <el-sub-menu index="job">
                         <template #title>
                             <el-icon>
@@ -51,34 +52,25 @@
                             </el-icon>
                             <span>职位中心</span>
                         </template>
-                        <el-menu-item index="/jobList">全部职位</el-menu-item>
-                        <el-menu-item index="/matchJob">智能匹配岗位</el-menu-item>
-                    </el-sub-menu>
 
-                    <el-sub-menu index="user">
-                        <template #title>
-                            <el-icon>
-                                <User />
-                            </el-icon>
-                            <span>求职者中心</span>
+                        <!-- 求职者看到的菜单 -->
+                        <template v-if="role === 'user'">
+                            <el-menu-item index="/jobList">全部职位</el-menu-item>
+                            <el-menu-item index="/matchJob">智能匹配岗位</el-menu-item>
+                            <el-menu-item index="/resumeEdit">简历管理</el-menu-item>
+                            <el-menu-item index="/myApply">我的投递</el-menu-item>
                         </template>
-                        <el-menu-item index="/resumeEdit">简历编辑</el-menu-item>
-                        <el-menu-item index="/myApply">我的投递</el-menu-item>
-                    </el-sub-menu>
 
-                    <el-sub-menu index="company">
-                        <template #title>
-                            <el-icon>
-                                <OfficeBuilding />
-                            </el-icon>
-                            <span>企业管理</span>
+                        <!-- 企业看到的菜单 -->
+                        <template v-if="role === 'company'">
+                            <el-menu-item index="/companyInfo">企业信息</el-menu-item>
+                            <el-menu-item index="/publishJob">发布职位</el-menu-item>
+                            <el-menu-item index="/jobManage">职位管理</el-menu-item>
+                            <el-menu-item index="/applyManage">简历投递管理</el-menu-item>
                         </template>
-                        <el-menu-item index="/companyInfo">企业信息</el-menu-item>
-                        <el-menu-item index="/publishJob">发布职位</el-menu-item>
-                        <el-menu-item index="/jobManage">职位管理</el-menu-item>
-                        <el-menu-item index="/applyManage">简历投递管理</el-menu-item>
                     </el-sub-menu>
 
+                    <!-- 资讯课程 -->
                     <el-sub-menu index="info">
                         <template #title>
                             <el-icon>
@@ -90,6 +82,7 @@
                         <el-menu-item index="/courseList">学习课程</el-menu-item>
                     </el-sub-menu>
 
+                    <!-- 交流论坛 -->
                     <el-sub-menu index="forum">
                         <template #title>
                             <el-icon>
@@ -111,7 +104,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
@@ -125,6 +118,12 @@ import {
 
 const router = useRouter()
 const userInfo = ref(null)
+
+// 🔥 自动获取角色
+const role = computed(() => {
+    if (!userInfo.value) return ''
+    return userInfo.value.role || ''
+})
 
 onMounted(() => {
     const info = localStorage.getItem('userInfo')
