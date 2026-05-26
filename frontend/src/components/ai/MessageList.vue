@@ -1,5 +1,5 @@
 <template>
-  <div ref="listRef" class="message-list">
+  <div ref="listRef" class="message-list" @scroll="handleScroll">
     <div v-if="!messages.length" class="empty-state">
       <h4>你好，我是你的 AI 求职助手</h4>
       <p>可以帮你分析简历、推荐岗位、优化求职材料。</p>
@@ -25,40 +25,8 @@
     >
       <div class="message-bubble" :class="`is-${message.role}`">
         <template v-if="message.role === 'assistant'">
-          <div v-if="message.reasoning?.trim()" class="reasoning-box">
-            <button
-              type="button"
-              class="reasoning-toggle"
-              @click="toggleReasoning(message)"
-            >
-              <span>{{ isReasoningCollapsed(message) ? '展开思考过程' : '收起思考过程' }}</span>
-              <span class="reasoning-status">
-                {{ message.status === 'thinking' || message.status === 'streaming' ? '思考中' : '已完成' }}
-              </span>
-            </button>
-
-            <div v-show="!isReasoningCollapsed(message)" class="reasoning-body">
-              <div class="reasoning-text">{{ message.reasoning }}</div>
-            </div>
-          </div>
-
-          <div
-            v-if="message.content.trim()"
-            class="markdown-body"
-            v-html="renderMarkdown(message.content)"
-          ></div>
-
-          <div v-else class="thinking-state">
-            <span>AI 正在思考...</span>
-            <span class="dot"></span>
-            <span class="dot"></span>
-            <span class="dot"></span>
-          </div>
-
-          <span
-            v-if="message.status === 'streaming' || message.status === 'thinking'"
-            class="typing-cursor"
-          ></span>
+          <div v-if="message.content.trim()" class="markdown-body" v-html="renderMarkdown(message.content)"></div>
+          <div v-else class="status-text">AI 正在生成中...</div>
         </template>
 
         <template v-else>
@@ -92,7 +60,8 @@ const props = defineProps({
 })
 
 const listRef = ref(null)
-const collapsedState = ref({})
+const shouldAutoScroll = ref(true)
+const AUTO_SCROLL_THRESHOLD = 72
 
 const quickActions = [
   {
@@ -115,7 +84,7 @@ marked.setOptions({
 })
 
 const renderMarkdown = (content) => {
-  const rawHtml = marked.parse(content || '')
+  const rawHtml = marked.parse(String(content || ''))
   return DOMPurify.sanitize(rawHtml)
 }
 
@@ -127,7 +96,18 @@ const formatTime = (timestamp) => {
   }).format(timestamp)
 }
 
-const refreshView = async () => {
+const isNearBottom = () => {
+  if (!listRef.value) return true
+
+  const { scrollTop, clientHeight, scrollHeight } = listRef.value
+  return scrollHeight - (scrollTop + clientHeight) <= AUTO_SCROLL_THRESHOLD
+}
+
+const handleScroll = () => {
+  shouldAutoScroll.value = isNearBottom()
+}
+
+const refreshView = async (forceScroll = false) => {
   await nextTick()
   if (!listRef.value) return
 
@@ -135,35 +115,16 @@ const refreshView = async () => {
     hljs.highlightElement(block)
   })
 
-  listRef.value.scrollTop = listRef.value.scrollHeight
-}
-
-const isReasoningCollapsed = (message) => {
-  if (!message.reasoning?.trim()) return true
-  if (collapsedState.value[message.id] !== undefined) {
-    return collapsedState.value[message.id]
+  if (forceScroll || shouldAutoScroll.value) {
+    listRef.value.scrollTop = listRef.value.scrollHeight
   }
-  return message.status !== 'thinking' && message.status !== 'streaming'
-}
-
-const toggleReasoning = (message) => {
-  collapsedState.value[message.id] = !isReasoningCollapsed(message)
 }
 
 watch(
   () => props.messages,
-  (messages) => {
-    messages.forEach((message) => {
-      if (
-        message.role === 'assistant' &&
-        message.reasoning?.trim() &&
-        collapsedState.value[message.id] === undefined
-      ) {
-        collapsedState.value[message.id] =
-          message.status !== 'thinking' && message.status !== 'streaming'
-      }
-    })
-    refreshView()
+  () => {
+    const wasNearBottom = isNearBottom()
+    refreshView(wasNearBottom)
   },
   {
     deep: true,
@@ -177,10 +138,10 @@ watch(
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 18px 16px;
+  padding: 20px 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .empty-state {
@@ -198,14 +159,14 @@ watch(
 .empty-state h4 {
   margin: 0 0 10px;
   font-size: 22px;
-  font-weight: 600;
+  font-weight: 700;
   color: #111827;
 }
 
 .empty-state p {
   margin: 0;
-  max-width: 280px;
-  line-height: 1.7;
+  max-width: 320px;
+  line-height: 1.8;
   color: #6b7280;
 }
 
@@ -246,9 +207,9 @@ watch(
 }
 
 .message-bubble {
-  max-width: 82%;
-  border-radius: 18px;
-  padding: 12px 14px 10px;
+  max-width: min(860px, 88%);
+  border-radius: 20px;
+  padding: 16px 18px 12px;
   word-break: break-word;
 }
 
@@ -267,31 +228,58 @@ watch(
 
 .plain-text {
   white-space: pre-wrap;
-  line-height: 1.7;
+  line-height: 1.75;
   font-size: 14px;
 }
 
-:deep(.markdown-body) {
+.status-text {
   font-size: 14px;
-  line-height: 1.7;
+  color: #6b7280;
+}
+
+:deep(.markdown-body) {
+  font-size: 15px;
+  line-height: 1.9;
   color: inherit;
+}
+
+:deep(.markdown-body h1),
+:deep(.markdown-body h2) {
+  margin: 0 0 14px;
+  font-size: 22px;
+  line-height: 1.4;
+  font-weight: 700;
+  color: #111827;
+}
+
+:deep(.markdown-body h3) {
+  margin: 0 0 12px;
+  font-size: 18px;
+  line-height: 1.5;
+  font-weight: 600;
+  color: #111827;
 }
 
 :deep(.markdown-body p),
 :deep(.markdown-body ul),
 :deep(.markdown-body ol),
 :deep(.markdown-body pre),
-:deep(.markdown-body blockquote),
-:deep(.markdown-body h1),
-:deep(.markdown-body h2),
-:deep(.markdown-body h3),
-:deep(.markdown-body h4) {
-  margin: 0 0 10px;
+:deep(.markdown-body blockquote) {
+  margin: 0 0 14px;
+}
+
+:deep(.markdown-body ul),
+:deep(.markdown-body ol) {
+  padding-left: 1.35em;
+}
+
+:deep(.markdown-body li) {
+  margin-bottom: 10px;
 }
 
 :deep(.markdown-body pre) {
   overflow: auto;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border-radius: 12px;
   background: #f8fafc;
 }
@@ -309,107 +297,11 @@ watch(
 }
 
 .message-meta {
-  margin-top: 8px;
+  margin-top: 10px;
   display: flex;
   gap: 8px;
   font-size: 11px;
   color: #9ca3af;
-}
-
-.reasoning-box {
-  margin-bottom: 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  background: #f8fafc;
-}
-
-.reasoning-toggle {
-  width: 100%;
-  border: none;
-  background: transparent;
-  padding: 9px 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  cursor: pointer;
-  font-size: 12px;
-  color: #4b5563;
-}
-
-.reasoning-status {
-  color: #9ca3af;
-}
-
-.reasoning-body {
-  padding: 0 12px 12px;
-}
-
-.reasoning-text {
-  white-space: pre-wrap;
-  font-size: 12px;
-  line-height: 1.75;
-  color: #6b7280;
-  font-style: italic;
-}
-
-.thinking-state {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 14px;
-  color: #6b7280;
-}
-
-.dot {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: currentColor;
-  animation: bounce 1s infinite ease-in-out;
-}
-
-.dot:nth-child(2) {
-  animation-delay: 0.1s;
-}
-
-.dot:nth-child(3) {
-  animation-delay: 0.2s;
-}
-
-.typing-cursor {
-  display: inline-block;
-  width: 7px;
-  height: 1em;
-  margin-left: 2px;
-  vertical-align: middle;
-  background: #2563eb;
-  border-radius: 999px;
-  animation: blink 0.9s steps(1, end) infinite;
-}
-
-@keyframes blink {
-  0%,
-  49% {
-    opacity: 1;
-  }
-  50%,
-  100% {
-    opacity: 0;
-  }
-}
-
-@keyframes bounce {
-  0%,
-  80%,
-  100% {
-    transform: scale(0.8);
-    opacity: 0.45;
-  }
-  40% {
-    transform: scale(1.1);
-    opacity: 1;
-  }
 }
 
 @media (max-width: 768px) {
@@ -418,10 +310,17 @@ watch(
   }
 
   .message-bubble {
-    max-width: 88%;
+    max-width: 94%;
+    padding: 14px 14px 10px;
   }
 
-  .empty-state h4 {
+  :deep(.markdown-body) {
+    font-size: 14px;
+    line-height: 1.8;
+  }
+
+  :deep(.markdown-body h1),
+  :deep(.markdown-body h2) {
     font-size: 20px;
   }
 }

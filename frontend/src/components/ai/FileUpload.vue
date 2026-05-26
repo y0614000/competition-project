@@ -14,7 +14,6 @@
 import { ref } from 'vue'
 import mammoth from 'mammoth/mammoth.browser'
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs'
-import Tesseract from 'tesseract.js'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/legacy/build/pdf.worker.min.mjs',
@@ -30,6 +29,7 @@ const emit = defineEmits(['files-parsed', 'error', 'parsing-change'])
 
 const inputRef = ref(null)
 const MAX_TEXT_LENGTH = 12000
+const MAX_PDF_PAGES = 10
 
 const truncate = (value, maxLength = MAX_TEXT_LENGTH) => {
   const text = String(value || '').trim()
@@ -58,12 +58,10 @@ const guessIsResume = (name = '', text = '') => {
   return /(简历|resume|cv|工作经历|教育经历|项目经验|技能)/i.test(sample)
 }
 
-const extractPdfText = async (file) => {
-  const buffer = await readAsArrayBuffer(file)
-  const pdf = await pdfjsLib.getDocument({ data: buffer }).promise
+const extractPdfText = async (pdf) => {
   const pages = []
 
-  for (let index = 1; index <= pdf.numPages; index += 1) {
+  for (let index = 1; index <= Math.min(pdf.numPages, MAX_PDF_PAGES); index += 1) {
     const page = await pdf.getPage(index)
     const content = await page.getTextContent()
     pages.push(content.items.map((item) => item.str).join(' '))
@@ -99,18 +97,9 @@ const extractDocText = async (file) => {
 
 const extractImageData = async (file) => {
   const dataUrl = await readAsDataURL(file)
-  let ocrText = ''
-
-  try {
-    const result = await Tesseract.recognize(dataUrl, 'chi_sim+eng')
-    ocrText = truncate(result?.data?.text || '')
-  } catch (error) {
-    console.warn('OCR failed:', error)
-  }
 
   return {
-    dataUrl,
-    ocrText
+    dataUrl
   }
 }
 
@@ -129,12 +118,29 @@ const parseFile = async (file) => {
   }
 
   if (extension === 'pdf') {
-    const extractedText = await extractPdfText(file)
+    let extractedText = ''
+    let analysisText = ''
+
+    try {
+      const buffer = await readAsArrayBuffer(file)
+      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise
+      extractedText = await extractPdfText(pdf)
+    } catch (error) {
+      console.warn('PDF parse failed:', error)
+    }
+
+    if (extractedText) {
+      analysisText = `PDF 内容提取：\n${extractedText}`
+    } else {
+      analysisText =
+        'PDF 已上传，但当前文件未能稳定提取文本内容，可能是扫描版、图片版或加密文档。请结合用户问题做保守分析，并提醒用户如需更准确结果可补充文字说明或转成 Word 文档。'
+    }
+
     return {
       ...basePayload,
       kind: 'pdf',
       extractedText,
-      analysisText: `PDF 内容提取：\n${extractedText}`,
+      analysisText,
       isResume: guessIsResume(file.name, extractedText)
     }
   }
@@ -162,18 +168,15 @@ const parseFile = async (file) => {
   }
 
   if (['png', 'jpg', 'jpeg', 'webp'].includes(extension)) {
-    const { dataUrl, ocrText } = await extractImageData(file)
-    const analysisText = ocrText
-      ? `图片 OCR 结果：\n${ocrText}`
-      : '图片已上传，可直接结合图像内容进行分析。'
+    const { dataUrl } = await extractImageData(file)
+    const analysisText = '图片已上传，请直接结合图像内容进行分析。'
 
     return {
       ...basePayload,
       kind: 'image',
       dataUrl,
-      ocrText,
       analysisText,
-      isResume: guessIsResume(file.name, ocrText)
+      isResume: guessIsResume(file.name, '')
     }
   }
 
@@ -193,6 +196,7 @@ const handleFiles = async (fileList) => {
     emit('files-parsed', parsedFiles)
   } catch (error) {
     emit('error', error)
+    emit('parsing-change', false)
   } finally {
     if (inputRef.value) {
       inputRef.value.value = ''

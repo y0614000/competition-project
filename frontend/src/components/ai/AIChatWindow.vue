@@ -18,7 +18,7 @@
         :disabled="isGenerating || isParsingFiles"
         :loading="isGenerating"
         :parsing="isParsingFiles"
-        @send="sendMessage"
+        @send="sendMessage()"
         @stop="stopGeneration"
         @files-parsed="handleFilesParsed"
         @parsing-change="isParsingFiles = $event"
@@ -33,12 +33,14 @@ import { ElMessage } from 'element-plus'
 import MessageInput from './MessageInput.vue'
 import MessageList from './MessageList.vue'
 import {
+  appendStreamChunk,
   buildConversationInput,
   createDefaultPrompt,
   createUserDisplayContent,
   loadCachedMessages,
   makeMessageId,
   saveCachedMessages,
+  sanitizeAssistantOutput,
   streamDoubaoChat
 } from './services/doubao'
 
@@ -46,153 +48,28 @@ defineEmits(['close'])
 
 const draft = ref('')
 const messages = ref([])
-const isParsingFiles = ref(false)
 const isGenerating = ref(false)
+const isParsingFiles = ref(false)
 const activeController = ref(null)
-const typingQueue = ref([])
 const activeAssistantId = ref('')
-
-let typingTimer = null
-let streamFinished = false
-let streamAborted = false
-
-const persistFinalMessages = () => {
-  const finalMessages = messages.value.filter((message) => {
-    if (message.role !== 'assistant') return true
-    return message.status !== 'thinking' && message.content.trim()
-  })
-  saveCachedMessages(finalMessages)
-}
+const streamBuffer = ref('')
 
 const loadMessages = () => {
   messages.value = loadCachedMessages()
 }
 
-const getActiveAssistant = () =>
+const persistMessages = () => {
+  const finalMessages = messages.value.filter((message) => {
+    if (message.role !== 'assistant') return true
+    return message.status !== 'thinking'
+  })
+  saveCachedMessages(finalMessages)
+}
+
+const getAssistantMessage = () =>
   messages.value.find((message) => message.id === activeAssistantId.value)
 
-const getQueuedText = (kind) =>
-  typingQueue.value
-    .filter((token) => token.kind === kind)
-    .map((token) => token.char)
-    .join('')
-
-const getBufferedText = (kind) => {
-  const assistantMessage = getActiveAssistant()
-  if (!assistantMessage) return ''
-
-  const rendered = kind === 'reasoning' ? assistantMessage.reasoning || '' : assistantMessage.content || ''
-  return rendered + getQueuedText(kind)
-}
-
-const getNonDuplicatedSuffix = (existingText, incomingText) => {
-  const incoming = String(incomingText || '')
-  if (!incoming) return ''
-  if (!existingText) return incoming
-
-  if (incoming.startsWith(existingText)) {
-    return incoming.slice(existingText.length)
-  }
-
-  if (existingText.endsWith(incoming)) {
-    return ''
-  }
-
-  const maxOverlap = Math.min(existingText.length, incoming.length)
-  for (let size = maxOverlap; size > 0; size -= 1) {
-    if (existingText.slice(-size) === incoming.slice(0, size)) {
-      return incoming.slice(size)
-    }
-  }
-
-  return incoming
-}
-
-const stopTypingLoop = () => {
-  if (typingTimer) {
-    clearTimeout(typingTimer)
-    typingTimer = null
-  }
-}
-
-const finalizeAssistantMessage = () => {
-  stopTypingLoop()
-  const assistantMessage = getActiveAssistant()
-  if (!assistantMessage) return
-
-  if (assistantMessage.status === 'error') {
-    activeAssistantId.value = ''
-    persistFinalMessages()
-    return
-  }
-
-  assistantMessage.status = streamAborted ? 'stopped' : 'done'
-  if (streamAborted && !assistantMessage.content.trim()) {
-    assistantMessage.content = '已停止生成。'
-  }
-
-  activeAssistantId.value = ''
-  isGenerating.value = false
-  activeController.value = null
-  persistFinalMessages()
-}
-
-const runTypingLoop = () => {
-  if (typingTimer) return
-
-  typingTimer = window.setTimeout(function step() {
-    const assistantMessage = getActiveAssistant()
-    if (!assistantMessage) {
-      stopTypingLoop()
-      return
-    }
-
-    const nextToken = typingQueue.value.shift()
-    if (nextToken) {
-      assistantMessage.status = 'streaming'
-      if (nextToken.kind === 'reasoning') {
-        assistantMessage.reasoning += nextToken.char
-      } else {
-        assistantMessage.content += nextToken.char
-      }
-    }
-
-    if (typingQueue.value.length) {
-      typingTimer = window.setTimeout(step, 14)
-      return
-    }
-
-    stopTypingLoop()
-    if (streamFinished) {
-      finalizeAssistantMessage()
-    }
-  }, 14)
-}
-
-const enqueueDelta = ({ kind, text }) => {
-  const nextText = getNonDuplicatedSuffix(getBufferedText(kind), text)
-  if (!nextText) return
-
-  typingQueue.value.push(
-    ...Array.from(nextText).map((char) => ({
-      kind,
-      char
-    }))
-  )
-  runTypingLoop()
-}
-
-const createAssistantPlaceholder = () => ({
-  id: makeMessageId('assistant'),
-  role: 'assistant',
-  reasoning: '',
-  content: '',
-  status: 'thinking',
-  createdAt: Date.now(),
-  attachments: []
-})
-
-const createUserMessage = (text, attachments = [], displayText = '') => ({
+const createUserMessage = ({ text = '', attachments = [], displayText = '' }) => ({
   id: makeMessageId('user'),
   role: 'user',
   content: displayText || createUserDisplayContent(text, attachments),
@@ -201,26 +78,63 @@ const createUserMessage = (text, attachments = [], displayText = '') => ({
   attachments: attachments.map((file) => ({
     id: file.id,
     name: file.name,
-    kind: file.kind,
     size: file.size,
-    isResume: file.isResume,
-    analysisText: file.analysisText,
-    extractedText: file.extractedText,
-    ocrText: file.ocrText
+    kind: file.kind,
+    isResume: !!file.isResume,
+    extractedText: file.extractedText || '',
+    analysisText: file.analysisText || '',
+    ocrText: file.ocrText || '',
+    dataUrl: file.dataUrl || ''
   }))
 })
 
-const markAssistantError = (message) => {
-  const assistantMessage = getActiveAssistant()
+const createAssistantMessage = () => ({
+  id: makeMessageId('assistant'),
+  role: 'assistant',
+  content: '',
+  status: 'thinking',
+  createdAt: Date.now(),
+  attachments: []
+})
+
+const finalizeAssistantMessage = ({ aborted = false } = {}) => {
+  const assistantMessage = getAssistantMessage()
+  if (!assistantMessage) return
+
+  assistantMessage.content = sanitizeAssistantOutput(assistantMessage.content)
+  assistantMessage.status = aborted ? 'stopped' : 'done'
+
+  if (aborted && !assistantMessage.content.trim()) {
+    assistantMessage.content = '已停止生成。'
+  }
+
+  activeAssistantId.value = ''
+  activeController.value = null
+  streamBuffer.value = ''
+  isGenerating.value = false
+  persistMessages()
+}
+
+const handleStreamDelta = (chunk) => {
+  const assistantMessage = getAssistantMessage()
+  if (!assistantMessage) return
+
+  streamBuffer.value = appendStreamChunk(streamBuffer.value, chunk)
+  assistantMessage.content = streamBuffer.value
+  assistantMessage.status = 'streaming'
+}
+
+const handleStreamError = (message) => {
+  const assistantMessage = getAssistantMessage()
   if (!assistantMessage) return
 
   assistantMessage.status = 'error'
   assistantMessage.content = message || '生成失败，请稍后重试。'
   activeAssistantId.value = ''
-  isGenerating.value = false
   activeController.value = null
-  stopTypingLoop()
-  persistFinalMessages()
+  streamBuffer.value = ''
+  isGenerating.value = false
+  persistMessages()
 }
 
 const sendMessage = async (payload = {}) => {
@@ -236,63 +150,55 @@ const sendMessage = async (payload = {}) => {
         }
 
   const attachments = [...(options.attachments || [])]
-  const messageText = String(options.text || '').trim() || createDefaultPrompt(attachments)
-  if (!messageText && !attachments.length) return
+  const prompt = String(options.text || '').trim() || createDefaultPrompt(attachments)
+  if (!prompt && !attachments.length) return
 
-  const userMessage = createUserMessage(messageText, attachments, options.displayText)
-  const assistantMessage = createAssistantPlaceholder()
-  const history = [...messages.value, userMessage]
+  const userMessage = createUserMessage({
+    text: prompt,
+    attachments,
+    displayText: options.displayText
+  })
+  const assistantMessage = createAssistantMessage()
+  const history = [...messages.value]
 
   messages.value.push(userMessage, assistantMessage)
   draft.value = ''
   activeAssistantId.value = assistantMessage.id
+  activeController.value = new AbortController()
   isGenerating.value = true
-  streamFinished = false
-  streamAborted = false
-  typingQueue.value = []
-  saveCachedMessages(history)
-
-  const controller = new AbortController()
-  activeController.value = controller
+  streamBuffer.value = ''
+  persistMessages()
 
   try {
     await streamDoubaoChat({
       messages: buildConversationInput({
-        history: history.filter((message) => message.id !== userMessage.id),
-        userText: messageText,
+        history,
+        userText: prompt,
         attachments
       }),
-      signal: controller.signal,
-      onDelta: (delta) => {
-        enqueueDelta(delta)
+      signal: activeController.value.signal,
+      onDelta: (chunk) => {
+        handleStreamDelta(chunk)
       },
       onDone: () => {
-        streamFinished = true
-        if (!typingQueue.value.length) {
-          finalizeAssistantMessage()
-        }
+        finalizeAssistantMessage()
       },
       onError: (error) => {
-        markAssistantError(error.message)
+        handleStreamError(error?.message)
       }
     })
   } catch (error) {
     if (error?.name === 'AbortError') {
-      streamFinished = true
-      streamAborted = true
-      if (!typingQueue.value.length) {
-        finalizeAssistantMessage()
-      }
+      finalizeAssistantMessage({ aborted: true })
       return
     }
 
-    markAssistantError(error?.message || '豆包服务请求失败。')
+    handleStreamError(error?.message || '豆包服务请求失败。')
   }
 }
 
 const stopGeneration = () => {
   if (!activeController.value) return
-  streamAborted = true
   activeController.value.abort()
   ElMessage.info('已停止生成')
 }
@@ -304,14 +210,11 @@ const handleQuickAction = (prompt) => {
 const handleFilesParsed = (files) => {
   if (!files.length) return
 
-  const fileNames = files.map((file) => file.name).join('、')
-  const prompt = draft.value.trim() || createDefaultPrompt(files)
-  const displayText = `已上传 ${fileNames}，正在分析...`
-
+  const customPrompt = String(draft.value || '').trim()
   sendMessage({
-    text: prompt,
+    text: customPrompt || createDefaultPrompt(files),
     attachments: files,
-    displayText
+    displayText: customPrompt || '已上传材料，正在分析...'
   })
 }
 
@@ -320,7 +223,6 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  stopTypingLoop()
   if (activeController.value) {
     activeController.value.abort()
   }
